@@ -1,0 +1,99 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+}
+
+#board {
+    background-image: url("images/backgrond.png");
+}
+
+/* Game Over Screen Elements */
+.game-over-elements {
+    display: none;
+    position: absolute;
+    z-index: 20;
+}
+
+/* Button Visibility Control */
+#mute-btn-home,
+#play-btn,
+#mute-btn-gameover {
+    display: none;
+}
+
+#restart-btn,
+#sound-btn-gameover {
+    display: none;
+}
+
+/* Z-index adjustments */
+#homepage { z-index: 10; }
+#board { z-index: 1; }
+#ui { z-index: 15; } /* Increased z-index for UI */
+#restart-btn,
+#sound-btn-gameover,
+#mute-btn-gameover { z-index: 20; }
+
+/* Enable pointer events */
+.game-control {
+    pointer-events: auto;
+}
+/* CSS Updates */
+/* Sound Control Positions */
+#start-btn {
+    left: 200px;
+    top: 400px;
+    width: 80px;
+    height: 80px;
+}
+
+#sound-btn-home, #mute-btn-home {
+    left: 10px;
+    top: 10px;
+    width: 40px;
+    height: 40px;
+}
+
+#pause-overlay img {
+    width: 80px;
+    height: 80px;
+    margin: 0 15px;   
+}
+
+
+#sound-btn-gameover, #mute-btn-gameover {
+    left: 200px;
+    top: 400px;
+    width: 80px;
+    height: 80px;
+}
+
+/* Performance optimizations */
+canvas {
+    will-change: transform;
+    image-rendering: optimizeSpeed;
+}
+
+/* Enemy animations */
+@keyframes enemyFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.enemy {
+    animation: enemyFloat 2s ease-in-out infinite;
+}
+
+/* Add shield animation */
+@keyframes shield-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Add to CSS */
+.powerup-shield {
+    animation: shield-pulse 1.5s infinite;
+    pointer-events: none;
+}
