@@ -22,8 +22,7 @@ let lastPowerUpSpawn = 0;
 let powerUpSpawnInterval = 10000; // 10 seconds
 let enemyArray = [];
 let enemySpawnInterval = 4000; // 4 seconds
-let lastEnemySpawn = 0;
-// Enemy parameters
+let lastEnemySpawn = 0; // Enemy parameters
 let baseEnemySpeed = -4;
 let enemySpeedIncrease = -0.5; // Speed increase per level
 let maxEnemySpeed = -8;        // Maximum enemy speed
@@ -89,6 +88,8 @@ let currentLevel = 0;
 let lastLevelCheckpoint = 0;
 let countdown = 3;
 let isCountdownActive = false;
+let lastPipeGap = { top: 0, bottom: 0 }; // Stores the Y-range of the pipe gap
+
 
 // Level animation
 let isLevelAnimating = false;
@@ -446,17 +447,18 @@ if (shieldActive) {
         if (e.x < -e.width) enemyArray.splice(i, 1);
     }
 
-    // Spawn new powerups
-    if (Date.now() - lastPowerUpSpawn > powerUpSpawnInterval) {
-        spawnPowerUp();
-        lastPowerUpSpawn = Date.now();
-    }
+    const now = Date.now();
 
-    // Spawn new enemies
-    if (Date.now() - lastEnemySpawn > enemySpawnInterval) {
-        spawnEnemy();
-        lastEnemySpawn = Date.now();
-    }
+if (now - lastPowerUpSpawn > powerUpSpawnInterval) {
+    spawnPowerUp();
+    lastPowerUpSpawn = now;
+}
+
+if (now - lastEnemySpawn > enemySpawnInterval) {
+    spawnEnemy();
+    lastEnemySpawn = now;
+}
+
 }
 
 function updateDifficulty() {
@@ -472,6 +474,11 @@ function placePipes() {
     let minPipeY = -pipeHeight + 50; // Original minimum Y position
     let maxPipeY = 0 - currentGap - 150; // Original maximum Y position
     let randomPipeY = Math.random() * (maxPipeY - minPipeY) + minPipeY;
+
+    let gapTopY = randomPipeY + pipeHeight;
+let gapBottomY = gapTopY + basePipeGap;
+lastPipeGap = { top: gapTopY, bottom: gapBottomY }; // Save the current gap
+
 
     let obstacleChance = baseObstacleChance + currentLevel * obstacleIncreasePerLevel;
     obstacleChance = Math.min(obstacleChance, 0.75);
@@ -578,6 +585,10 @@ function restartGame() {
         pipeInterval = null;
     }
 
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+
     gameOver = false;
     gameStarted = false;
     score = 0;
@@ -670,19 +681,35 @@ function spawnPowerUp() {
 }
 
 function spawnEnemy() {
+    let enemyHeight = 40;
+    let y;
+    let tries = 0;
+
+    // Retry logic to avoid spawning in the pipe gap
+    do {
+        y = Math.random() * (boardHeight - enemyHeight);
+        tries++;
+    } while (
+        lastPipeGap &&
+        y + enemyHeight > lastPipeGap.top &&
+        y < lastPipeGap.bottom &&
+        tries < 10
+    );
+
     let speed = baseEnemySpeed + (enemySpeedIncrease * currentLevel);
-    speed = Math.max(maxEnemySpeed, speed); // Cap at maximum speed
-    speed += (Math.random() - 0.5); // Add random variation
+    speed = Math.max(maxEnemySpeed, speed);
+    speed += (Math.random() - 0.5); // Small random variation
 
     enemyArray.push({
         img: enemyImg,
         x: boardWidth,
-        y: Math.random() * (boardHeight - 60),
+        y: y,
         width: 60,
-        height: 40,
+        height: enemyHeight,
         speed: speed
     });
 }
+
 
 // Modified collision detection
 function detectCollision(a, b) {
