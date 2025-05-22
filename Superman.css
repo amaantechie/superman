@@ -1,99 +1,153 @@
 body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #000;
+  margin: 0;
+  overflow: hidden;
+  background-color: #000;
 }
 
+canvas {
+  will-change: transform;
+  image-rendering: optimizeSpeed;
+  position: absolute;
+  top: 0;
+  left: 0;
+   width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* Background */
 #board {
-    background-image: url("images/backgrond.png");
+  background-image: url("images/backgrond.png");
+  background-size: cover;
+  background-position: center;
 }
 
-/* Game Over Screen Elements */
-.game-over-elements {
-    display: none;
-    position: absolute;
-    z-index: 20;
+/* Home Screen */
+#homepage {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 10;
 }
 
-/* Button Visibility Control */
+/* UI Layer */
+#ui {
+  z-index: 15;
+}
+
+/* Hide default buttons initially */
 #mute-btn-home,
 #play-btn,
 #mute-btn-gameover {
-    display: none;
+  display: none;
 }
 
 #restart-btn,
 #sound-btn-gameover {
-    display: none;
+  display: none;
 }
 
-/* Z-index adjustments */
-#homepage { z-index: 10; }
-#board { z-index: 1; }
-#ui { z-index: 15; } /* Increased z-index for UI */
-#restart-btn,
-#sound-btn-gameover,
-#mute-btn-gameover { z-index: 20; }
-
-/* Enable pointer events */
+/* Control Buttons Base */
 .game-control {
-    pointer-events: auto;
-}
-/* CSS Updates */
-/* Sound Control Positions */
-#start-btn {
-    left: 200px;
-    top: 400px;
-    width: 80px;
-    height: 80px;
+  position: absolute;
+  pointer-events: auto;
+  z-index: 20;
 }
 
-#sound-btn-home, #mute-btn-home {
-    left: 10px;
-    top: 10px;
-    width: 40px;
-    height: 40px;
+/* Start Button */
+#start-btn {
+  top: 40vh;
+  left: 30vw;
+  width: 40vw;
+  max-width: 200px;
+  height: auto;
+}
+
+/* Sound Control */
+#sound-btn-home,
+#mute-btn-home {
+  top: 2vh;
+  left: 2vw;
+  width: 10vw;
+  max-width: 50px;
+  height: auto;
+}
+
+/* Pause Overlay */
+#pause-overlay {
+  display: none;
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 25;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 3vh;
 }
 
 #pause-overlay img {
-    width: 80px;
-    height: 80px;
-    margin: 0 15px;   
+  width: 15vw;
+  max-width: 80px;
+  height: auto;
 }
 
-
-#sound-btn-gameover, #mute-btn-gameover {
-    left: 200px;
-    top: 400px;
-    width: 80px;
-    height: 80px;
+/* Game Over Sound Buttons */
+#sound-btn-gameover,
+#mute-btn-gameover {
+  bottom: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15vw;
+  max-width: 80px;
+  height: auto;
 }
 
-/* Performance optimizations */
-canvas {
-    will-change: transform;
-    image-rendering: optimizeSpeed;
+/* Restart Button */
+#restart-btn {
+  bottom: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20vw;
+  max-width: 100px;
+  height: auto;
 }
 
-/* Enemy animations */
+/* Animations */
 @keyframes enemyFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .enemy {
-    animation: enemyFloat 2s ease-in-out infinite;
+  animation: enemyFloat 2s ease-in-out infinite;
 }
 
-/* Add shield animation */
 @keyframes shield-pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-/* Add to CSS */
 .powerup-shield {
-    animation: shield-pulse 1.5s infinite;
-    pointer-events: none;
+  animation: shield-pulse 1.5s infinite;
+  pointer-events: none;
+}
+
+/* Landscape tweaks */
+@media (orientation: landscape) {
+  #start-btn {
+    top: 30vh;
+    left: 40vw;
+    width: 20vw;
+  }
+
+  #pause-overlay img {
+    width: 10vw;
+    max-width: 60px;
+  }
 }
