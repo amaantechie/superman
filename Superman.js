@@ -194,7 +194,7 @@ function toggleSound() {
 
     if (soundEnabled) bgMusic.play();
     else bgMusic.pause();
-}
+} 
 
 function updateSoundDisplay() {
     const showSound = soundEnabled;
