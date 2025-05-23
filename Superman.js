@@ -115,8 +115,18 @@ const muteBtnGameover = document.getElementById("mute-btn-gameover");
 
 window.onload = function () {
     board = document.getElementById("board");
-    board.height = boardHeight;
-    board.width = boardWidth;
+    function resizeCanvas() {
+    board.width = window.innerWidth;
+    board.height = window.innerHeight;
+    ui.width = window.innerWidth;
+    ui.height = window.innerHeight;
+
+    boardWidth = board.width;
+    boardHeight = board.height;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
     context = board.getContext("2d");
 
     let uiCanvas = document.getElementById("ui");
