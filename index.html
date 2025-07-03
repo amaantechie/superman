@@ -1,138 +1,110 @@
-<!-- HTML -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Superman Game</title>
     <link rel="icon" type="image/png" href="images/fav6.png">
     <link rel="stylesheet" href="Superman.css">
-    <style>
-        .game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            margin: 0 auto;
-            background-color: #000;
-        }
-        
-        #homepage, #board, #ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        #homepage { z-index: 10; }
-        #board { z-index: 1; }
-        #ui { z-index: 3; }
-
-        /* Button Positioning */
-        #start-btn {
-            left: 90px;
-            top: 185px;
-            width: 180px;
-            height: 80px;
-        }
-        
-        #restart-btn {
-            left: 95px;
-            top: 400px;
-            width: 80px;
-            height: 80px;
-        }
-
-        #sound-btn-home, #mute-btn-home {
-            left: 5px;
-            top: 5px;
-            width: 40px;
-            height: 40px;
-        }
-
-        #pause-btn, #play-btn {
-            right: 5px;
-            top: 5px;
-            width: 40px;
-            height: 40px;
-        }
-
-        #sound-btn-gameover, #mute-btn-gameover {
-            left: 185px;
-            top: 400px;
-            width: 80px;
-            height: 80px;
-        }
-
-        .pause-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 20;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .game-control {
-            position: absolute;
-            cursor: pointer;
-            z-index: 1000;
-            border: none;
-            background: transparent;
-            padding: 0;
-            display: none;
-        }
-
-        #board, #ui { display: none; }
-        #homepage { display: block; }
-
-        #powerup-count {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #FFD700;
-            font-size: 20px;
-            z-index: 100;
-        }
-    </style>
 </head>
 <body>
-
-    <div class="game-container">
-        <img id="homepage" src="images/AMMAN.png">
-        <canvas id="board"></canvas>
-        <canvas id="ui"></canvas>
-
-        <!-- Game Controls -->
-        <button id="start-btn" class="game-control" style="left: 90px; top: 210px;">
-            <img src="images/start.png" width="140" height="60">
-        </button>
-        <button id="restart-btn" class="game-control"><img src="images/retry.png" width="80" height="80"></button>
-        
-        
-        <!-- Sound Controls -->
-        <img src="images/sound.png" id="sound-btn-home" class="game-control">
-        <img src="images/mute.png" id="mute-btn-home" class="game-control">
-        <img src="images/pause.png" id="pause-btn" class="game-control">
-        <img src="images/play.png" id="play-btn" class="game-control">
-        <img src="images/sound.png" id="sound-btn-gameover" class="game-control">
-        <img src="images/mute.png" id="mute-btn-gameover" class="game-control">
-
-        <!-- Pause Overlay -->
-        <div id="pause-overlay" class="pause-overlay">
-            <img src="images/play.png" id="resume-btn" class="game-control" width="80" height="80">
-            <img src="images/sound.png" id="sound-btn-pause" class="game-control" width="80" height="80">
-            <img src="images/mute.png" id="mute-btn-pause" class="game-control" width="80" height="80">
-            <img id="play-btn" src="images/play.png" alt="Play" style="display: none; width: 50px; height: 50px; cursor: pointer;" />
+    <div id="game-container">
+        <!-- Homepage -->
+        <div id="homepage" class="screen">
+            <img src="images/AMMAN.png" alt="Superman Game" class="bg-image">
+            <div class="home-controls">
+                <button id="start-btn" class="btn primary-btn">
+                    <img src="images/start.png" alt="Start">
+                </button>
+                <button id="sound-btn-home" class="btn sound-btn">
+                    <img src="images/sound.png" alt="Sound">
+                </button>
+                <button id="mute-btn-home" class="btn sound-btn" style="display: none;">
+                    <img src="images/mute.png" alt="Mute">
+                </button>
+            </div>
+            <div class="instructions">TAP TO START</div>
         </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen" style="display: none;">
+            <canvas id="board"></canvas>
+            <canvas id="ui"></canvas>
+            
+            <!-- Game UI -->
+            <div class="game-ui">
+                <div class="top-bar">
+                    <div class="score-info">
+                        <div id="current-score">0</div>
+                        <div id="high-score">HIGH: 0</div>
+                        <div id="level-display">LEVEL 0</div>
+                    </div>
+                    <div class="game-controls">
+                        <button id="pause-btn" class="btn control-btn">
+                            <img src="images/pause.png" alt="Pause">
+                        </button>
+                        <button id="sound-btn-game" class="btn control-btn">
+                            <img src="images/sound.png" alt="Sound">
+                        </button>
+                        <button id="mute-btn-game" class="btn control-btn" style="display: none;">
+                            <img src="images/mute.png" alt="Mute">
+                        </button>
+                    </div>
+                </div>
+                <div class="tap-instruction">TAP TO FLY</div>
+            </div>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="screen overlay" style="display: none;">
+            <div class="pause-content">
+                <h1>PAUSED</h1>
+                <div class="pause-buttons">
+                    <button id="resume-btn" class="btn secondary-btn">
+                        <img src="images/play.png" alt="Resume">
+                    </button>
+                    <button id="sound-btn-pause" class="btn secondary-btn">
+                        <img src="images/sound.png" alt="Sound">
+                    </button>
+                    <button id="mute-btn-pause" class="btn secondary-btn" style="display: none;">
+                        <img src="images/mute.png" alt="Mute">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen overlay" style="display: none;">
+            <div class="gameover-content">
+                <img src="images/gameover.png" alt="Game Over" class="gameover-image">
+                <div class="final-score">
+                    <div id="final-score-value">0</div>
+                    <div class="score-label">YOUR SCORE</div>
+                </div>
+                <div class="high-score-display">
+                    <img src="images/highscore.png" alt="High Score" class="highscore-image">
+                    <div id="final-high-score">0</div>
+                </div>
+                <div class="gameover-buttons">
+                    <button id="restart-btn" class="btn primary-btn">
+                        <img src="images/retry.png" alt="Restart">
+                    </button>
+                    <button id="sound-btn-gameover" class="btn secondary-btn">
+                        <img src="images/sound.png" alt="Sound">
+                    </button>
+                    <button id="mute-btn-gameover" class="btn secondary-btn" style="display: none;">
+                        <img src="images/mute.png" alt="Mute">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown -->
+        <div id="countdown" class="countdown" style="display: none;">3</div>
     </div>
+
     <script src="Superman.js"></script>
 </body>
 </html>
