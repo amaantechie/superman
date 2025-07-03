@@ -14,37 +14,51 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.game-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
 }
 
 .game-container {
   position: relative;
   width: 100vw;
   height: 100vh;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 400px;
+  max-height: 700px;
   background-color: #000;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+}
+
+/* Maintain aspect ratio on larger screens */
+@media (min-width: 401px) {
+  .game-container {
+    width: 400px;
+    height: 700px;
+  }
 }
 
 #homepage,
 #board,
 #ui {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 100vw;
-  max-height: 100vh;
-  object-fit: contain;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 #homepage {
   z-index: 10;
-  width: 100%;
-  height: 100%;
   object-fit: cover;
 }
 
@@ -61,74 +75,82 @@ body {
   pointer-events: none;
 }
 
-/* Game Controls */
-.game-control {
+/* Button Base Styles */
+.btn {
   position: absolute;
-  cursor: pointer;
-  z-index: 1000;
   border: none;
   background: transparent;
   padding: 0;
-  display: none;
+  cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.1s ease;
+  z-index: 15;
 }
 
-.game-control:active {
-  transform: scale(0.95);
+.btn:active {
+  transform: scale(0.9);
 }
 
-.game-control img {
+.btn img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   pointer-events: none;
 }
 
-/* Start Button */
+/* Game Buttons */
+.game-btn {
+  display: none;
+}
+
 #start-btn {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(40vw, 180px);
-  height: min(15vh, 80px);
+  width: 140px;
+  height: 60px;
+  z-index: 20;
+}
+
+#restart-btn {
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  z-index: 20;
+}
+
+/* Top Controls */
+.top-controls {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 15px;
   z-index: 15;
 }
 
-/* Restart Button */
-#restart-btn {
-  bottom: 20vh;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(20vw, 80px);
-  height: min(20vw, 80px);
+.control-btn {
+  width: 40px;
+  height: 40px;
+  display: none;
+}
+
+/* Game Over Controls */
+.gameover-controls {
+  position: absolute;
+  bottom: 25%;
+  right: 20%;
   z-index: 20;
 }
 
-/* Sound Controls - Home */
-.sound-btn {
-  top: 2vh;
-  left: 2vw;
-  width: min(10vw, 40px);
-  height: min(10vw, 40px);
-}
-
-/* Pause/Play Controls */
-.pause-btn {
-  top: 2vh;
-  right: 2vw;
-  width: min(10vw, 40px);
-  height: min(10vw, 40px);
-}
-
-/* Sound Controls - Game Over */
-.sound-btn-gameover {
-  bottom: 20vh;
-  right: 20vw;
-  width: min(20vw, 80px);
-  height: min(20vw, 80px);
-  z-index: 20;
+.gameover-controls .control-btn {
+  width: 80px;
+  height: 80px;
 }
 
 /* Pause Overlay */
@@ -139,55 +161,148 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  z-index: 25;
+  z-index: 30;
   display: none;
   justify-content: center;
   align-items: center;
 }
 
-.pause-controls {
+.pause-content {
+  text-align: center;
+  color: #ffd700;
+}
+
+.pause-content h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.pause-buttons {
   display: flex;
-  gap: min(5vw, 30px);
+  gap: 20px;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
 }
 
-.pause-control-btn {
-  width: min(20vw, 80px);
-  height: min(20vw, 80px);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 0.1s ease;
-  touch-action: manipulation;
-}
-
-.pause-control-btn:active {
-  transform: scale(0.9);
-}
-
-.pause-control-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.pause-btn {
+  width: 60px;
+  height: 60px;
+  position: relative;
 }
 
 /* Mobile Instructions */
 .mobile-instructions {
   position: absolute;
-  bottom: 5vh;
+  bottom: 15%;
   left: 50%;
   transform: translateX(-50%);
   color: #ffd700;
-  font-size: min(4vw, 16px);
+  font-size: 18px;
+  font-weight: bold;
   text-align: center;
   z-index: 15;
-  opacity: 0.8;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   pointer-events: none;
 }
 
-/* Canvas Optimizations */
+/* Visibility States */
+#board,
+#ui {
+  display: none;
+}
+
+#homepage {
+  display: block;
+}
+
+/* Show/Hide Logic */
+.show {
+  display: block !important;
+}
+
+.hide {
+  display: none !important;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 480px) {
+  .pause-content h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  .pause-buttons {
+    gap: 15px;
+  }
+
+  .pause-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  .mobile-instructions {
+    font-size: 16px;
+    bottom: 12%;
+  }
+}
+
+@media screen and (max-height: 600px) {
+  #start-btn {
+    width: 120px;
+    height: 50px;
+  }
+
+  .mobile-instructions {
+    font-size: 14px;
+    bottom: 10%;
+  }
+
+  .pause-content h2 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+  }
+}
+
+/* Landscape Mode */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .game-container {
+    max-width: none;
+    max-height: none;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .top-controls {
+    padding: 0 20px;
+  }
+
+  .mobile-instructions {
+    bottom: 8%;
+    font-size: 14px;
+  }
+}
+
+/* Prevent scrolling and zooming */
+html,
+body {
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable text selection */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Performance optimizations */
 canvas {
   will-change: transform;
   image-rendering: optimizeSpeed;
@@ -196,93 +311,7 @@ canvas {
   -ms-interpolation-mode: nearest-neighbor;
 }
 
-/* Visibility States */
-#board,
-#ui {
-  display: none;
-}
-#homepage {
-  display: block;
-}
-
-/* Game Over Screen Elements */
-.game-over-elements {
-  display: none;
-  position: absolute;
-  z-index: 20;
-}
-
-/* Button Visibility Control */
-#mute-btn-home,
-#play-btn,
-#mute-btn-gameover,
-#mute-btn-pause {
-  display: none;
-}
-
-#restart-btn,
-#sound-btn-gameover {
-  display: none;
-}
-
-/* Responsive Breakpoints */
-@media screen and (max-width: 480px) {
-  .pause-controls {
-    gap: min(8vw, 40px);
-  }
-
-  .mobile-instructions {
-    font-size: min(5vw, 18px);
-    bottom: 8vh;
-  }
-}
-
-@media screen and (max-height: 600px) {
-  #start-btn {
-    width: min(35vw, 160px);
-    height: min(12vh, 70px);
-  }
-
-  .mobile-instructions {
-    bottom: 3vh;
-    font-size: min(3.5vw, 14px);
-  }
-}
-
-/* Landscape Mode Adjustments */
-@media screen and (orientation: landscape) {
-  .sound-btn {
-    width: min(8vh, 40px);
-    height: min(8vh, 40px);
-  }
-
-  .pause-btn {
-    width: min(8vh, 40px);
-    height: min(8vh, 40px);
-  }
-
-  #start-btn {
-    width: min(25vh, 180px);
-    height: min(12vh, 80px);
-  }
-
-  .pause-control-btn {
-    width: min(15vh, 80px);
-    height: min(15vh, 80px);
-  }
-
-  .sound-btn-gameover {
-    width: min(15vh, 80px);
-    height: min(15vh, 80px);
-  }
-
-  #restart-btn {
-    width: min(15vh, 80px);
-    height: min(15vh, 80px);
-  }
-}
-
-/* Performance optimizations */
+/* Animations */
 @keyframes enemyFloat {
   0%,
   100% {
@@ -315,20 +344,4 @@ canvas {
 .powerup-shield {
   animation: shield-pulse 1.5s infinite;
   pointer-events: none;
-}
-
-/* Prevent text selection and context menu */
-* {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Prevent zoom on double tap */
-button,
-img,
-canvas {
-  touch-action: manipulation;
 }

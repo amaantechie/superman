@@ -1,21 +1,30 @@
 // Game constants - now responsive
-const baseWidth = 360
-const baseHeight = 640
-let boardWidth, boardHeight
-let scaleFactor = 1
+let boardWidth = 360
+let boardHeight = 640
 let context
 let uiContext
+let scaleFactor = 1
+
+// DOM elements
 const homepage = document.getElementById("homepage")
-let board = document.getElementById("board")
-let ui = document.getElementById("ui")
+const board = document.getElementById("board")
+const ui = document.getElementById("ui")
 const gameContainer = document.getElementById("game-container")
 const startBtn = document.getElementById("start-btn")
 const restartBtn = document.getElementById("restart-btn")
+const pauseOverlay = document.getElementById("pause-overlay")
+const mobileInstructions = document.getElementById("mobile-instructions")
+
+// Control buttons
+const soundBtnHome = document.getElementById("sound-btn-home")
+const muteBtnHome = document.getElementById("mute-btn-home")
+const pauseBtn = document.getElementById("pause-btn")
+const playBtn = document.getElementById("play-btn")
+const soundBtnGameover = document.getElementById("sound-btn-gameover")
+const muteBtnGameover = document.getElementById("mute-btn-gameover")
+const resumeBtn = document.getElementById("resume-btn")
 const soundBtnPause = document.getElementById("sound-btn-pause")
 const muteBtnPause = document.getElementById("mute-btn-pause")
-const pauseOverlay = document.getElementById("pause-overlay")
-const resumeBtn = document.getElementById("resume-btn")
-const mobileInstructions = document.getElementById("mobile-instructions")
 
 // Game objects
 const powerUpImg = new Image()
@@ -37,19 +46,20 @@ const maxEnemySpeed = -8
 const MAX_DIFFICULTY_LEVEL = 5
 const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200
 
-// Superman - will be scaled
+// Superman
 let SupermanWidth = 74.8
 let SupermanHeight = 32.4
-let SupermanX, SupermanY
+let SupermanX
+let SupermanY
 let SupermanImg
 let Superman = {}
 
-// Pipes - will be scaled
+// Pipes
 let pipeArray = []
 let pipeWidth = 64
 let pipeHeight = 512
-let pipeX,
-  pipeY = 0
+let pipeX
+const pipeY = 0
 
 // Difficulty parameters
 const basePipeInterval = 1700
@@ -68,8 +78,8 @@ let topPipeImg, bottomPipeImg, newTopPipeImg, newBottomPipeImg
 let gameOverImg, yourScoreImg, highScoreImg, collisionImg
 
 // Game variables
-let velocityX,
-  velocityY = 0
+let velocityX
+let velocityY = 0
 let gravity = 0.4
 let gameOver = false
 let score = 0
@@ -95,49 +105,38 @@ const hitSound = new Audio("./sound/hit.mp3")
 let soundEnabled = true
 let isPaused = false
 
-// UI elements
-const pauseBtn = document.getElementById("pause-btn")
-const playBtn = document.getElementById("play-btn")
-const soundBtnHome = document.getElementById("sound-btn-home")
-const muteBtnHome = document.getElementById("mute-btn-home")
-const soundBtnGameover = document.getElementById("sound-btn-gameover")
-const muteBtnGameover = document.getElementById("mute-btn-gameover")
-
 // Touch handling
 let touchStartTime = 0
 let isTouching = false
 
 function calculateDimensions() {
-  const containerRect = gameContainer.getBoundingClientRect()
-  const containerWidth = containerRect.width
-  const containerHeight = containerRect.height
+  const container = gameContainer.getBoundingClientRect()
+  const containerWidth = container.width
+  const containerHeight = container.height
 
-  // Calculate scale factor to maintain aspect ratio
-  const scaleX = containerWidth / baseWidth
-  const scaleY = containerHeight / baseHeight
+  // Calculate scale factor
+  const scaleX = containerWidth / 360
+  const scaleY = containerHeight / 640
   scaleFactor = Math.min(scaleX, scaleY)
 
-  // Set responsive dimensions
-  boardWidth = baseWidth * scaleFactor
-  boardHeight = baseHeight * scaleFactor
+  // Set board dimensions
+  boardWidth = containerWidth
+  boardHeight = containerHeight
 
-  // Update Superman position and size
+  // Update game object positions
   SupermanX = boardWidth / 8
   SupermanY = boardHeight / 2
   SupermanWidth = 74.8 * scaleFactor
   SupermanHeight = 32.4 * scaleFactor
 
-  // Update pipe dimensions
   pipeWidth = 64 * scaleFactor
   pipeHeight = 512 * scaleFactor
   pipeX = boardWidth
 
-  // Update other scaled values
   basePipeGap = boardHeight / 3.2
   velocityX = baseVelocityX * scaleFactor
   gravity = 0.4 * scaleFactor
 
-  // Update Superman object
   Superman = {
     x: SupermanX,
     y: SupermanY,
@@ -151,13 +150,8 @@ function resizeCanvas() {
 
   board.width = boardWidth
   board.height = boardHeight
-  board.style.width = boardWidth + "px"
-  board.style.height = boardHeight + "px"
-
   ui.width = boardWidth
   ui.height = boardHeight
-  ui.style.width = boardWidth + "px"
-  ui.style.height = boardHeight + "px"
 
   if (context) {
     context = board.getContext("2d")
@@ -171,16 +165,11 @@ function resizeCanvas() {
 
 window.onload = () => {
   calculateDimensions()
-
-  board = document.getElementById("board")
-  ui = document.getElementById("ui")
-
   resizeCanvas()
 
   context = board.getContext("2d")
   uiContext = ui.getContext("2d")
 
-  // Disable image smoothing for pixel-perfect rendering
   context.imageSmoothingEnabled = false
   uiContext.imageSmoothingEnabled = false
 
@@ -209,42 +198,9 @@ window.onload = () => {
   bgMusic.volume = 0.5
   flySound.volume = 0.7
   hitSound.volume = 0.8
-  updateSoundDisplay()
 
-  // Event listeners
-  startBtn.addEventListener("click", startGame)
-  startBtn.addEventListener("touchend", handleButtonTouch)
-  restartBtn.addEventListener("click", restartGame)
-  restartBtn.addEventListener("touchend", handleButtonTouch)
-
-  document.addEventListener("keydown", handleKeyPress)
-  pauseBtn.addEventListener("click", pauseGame)
-  pauseBtn.addEventListener("touchend", handleButtonTouch)
-  playBtn.addEventListener("click", resumeGame)
-  playBtn.addEventListener("touchend", handleButtonTouch)
-
-  soundBtnHome.addEventListener("click", toggleSound)
-  soundBtnHome.addEventListener("touchend", handleButtonTouch)
-  muteBtnHome.addEventListener("click", toggleSound)
-  muteBtnHome.addEventListener("touchend", handleButtonTouch)
-  soundBtnGameover.addEventListener("click", toggleSound)
-  soundBtnGameover.addEventListener("touchend", handleButtonTouch)
-  muteBtnGameover.addEventListener("click", toggleSound)
-  muteBtnGameover.addEventListener("touchend", handleButtonTouch)
-  resumeBtn.addEventListener("click", resumeGame)
-  resumeBtn.addEventListener("touchend", handleButtonTouch)
-  soundBtnPause.addEventListener("click", toggleSound)
-  soundBtnPause.addEventListener("touchend", handleButtonTouch)
-  muteBtnPause.addEventListener("click", toggleSound)
-  muteBtnPause.addEventListener("touchend", handleButtonTouch)
-
-  // Touch events for gameplay
-  document.addEventListener("touchstart", handleTouchStart, { passive: false })
-  document.addEventListener("touchend", handleTouchEnd, { passive: false })
-  document.addEventListener("touchmove", handleTouchMove, { passive: false })
-
-  // Prevent context menu
-  document.addEventListener("contextmenu", (e) => e.preventDefault())
+  // Add event listeners
+  setupEventListeners()
 
   // Handle resize
   window.addEventListener("resize", handleResize)
@@ -253,20 +209,39 @@ window.onload = () => {
   showHomepage()
 }
 
-function handleResize() {
-  setTimeout(() => {
-    resizeCanvas()
-    if (gameStarted && !gameOver) {
-      // Adjust Superman position proportionally
-      Superman.x = SupermanX
-      Superman.width = SupermanWidth
-      Superman.height = SupermanHeight
-    }
-  }, 100)
-}
+function setupEventListeners() {
+  // Button click events
+  startBtn.addEventListener("click", startGame)
+  restartBtn.addEventListener("click", restartGame)
+  pauseBtn.addEventListener("click", pauseGame)
+  playBtn.addEventListener("click", resumeGame)
+  resumeBtn.addEventListener("click", resumeGame)
 
-function handleOrientationChange() {
-  setTimeout(handleResize, 500)
+  // Sound button events
+  soundBtnHome.addEventListener("click", toggleSound)
+  muteBtnHome.addEventListener("click", toggleSound)
+  soundBtnGameover.addEventListener("click", toggleSound)
+  muteBtnGameover.addEventListener("click", toggleSound)
+  soundBtnPause.addEventListener("click", toggleSound)
+  muteBtnPause.addEventListener("click", toggleSound)
+
+  // Touch events for buttons (prevent event bubbling)
+  const allButtons = document.querySelectorAll(".btn")
+  allButtons.forEach((button) => {
+    button.addEventListener("touchstart", handleButtonTouch, { passive: false })
+    button.addEventListener("touchend", handleButtonTouch, { passive: false })
+  })
+
+  // Game area touch events
+  gameContainer.addEventListener("touchstart", handleTouchStart, { passive: false })
+  gameContainer.addEventListener("touchend", handleTouchEnd, { passive: false })
+  gameContainer.addEventListener("touchmove", handleTouchMove, { passive: false })
+
+  // Keyboard events
+  document.addEventListener("keydown", handleKeyPress)
+
+  // Prevent context menu
+  document.addEventListener("contextmenu", (e) => e.preventDefault())
 }
 
 function handleButtonTouch(e) {
@@ -275,31 +250,30 @@ function handleButtonTouch(e) {
 }
 
 function handleTouchStart(e) {
-  e.preventDefault()
-
-  // Don't handle touch if it's on a button
-  if (e.target.closest(".game-control") || e.target.closest(".pause-control-btn")) {
+  // Don't handle if touching a button
+  if (e.target.closest(".btn")) {
     return
   }
 
+  e.preventDefault()
   touchStartTime = Date.now()
   isTouching = true
 
   if (isCountdownActive) return
 
-  // Start game if not started yet
+  // Start game if not started
   if (!gameStarted && !gameOver) {
     startGame()
     return
   }
 
-  // If game is over, restart
+  // Restart if game over
   if (gameOver) {
     restartGame()
     return
   }
 
-  // If game is paused, resume
+  // Resume if paused
   if (isPaused) {
     resumeGame()
     return
@@ -312,12 +286,30 @@ function handleTouchStart(e) {
 }
 
 function handleTouchEnd(e) {
+  if (e.target.closest(".btn")) {
+    return
+  }
   e.preventDefault()
   isTouching = false
 }
 
 function handleTouchMove(e) {
   e.preventDefault()
+}
+
+function handleResize() {
+  setTimeout(() => {
+    resizeCanvas()
+    if (gameStarted && !gameOver) {
+      Superman.x = SupermanX
+      Superman.width = SupermanWidth
+      Superman.height = SupermanHeight
+    }
+  }, 100)
+}
+
+function handleOrientationChange() {
+  setTimeout(handleResize, 500)
 }
 
 function fly() {
@@ -330,18 +322,7 @@ function fly() {
 
 function toggleSound() {
   soundEnabled = !soundEnabled
-
-  // Update only relevant controls based on current screen
-  if (gameOver) {
-    soundBtnGameover.style.display = soundEnabled ? "block" : "none"
-    muteBtnGameover.style.display = soundEnabled ? "none" : "block"
-  } else if (isPaused) {
-    soundBtnPause.style.display = soundEnabled ? "block" : "none"
-    muteBtnPause.style.display = soundEnabled ? "none" : "block"
-  } else if (!gameStarted) {
-    soundBtnHome.style.display = soundEnabled ? "block" : "none"
-    muteBtnHome.style.display = soundEnabled ? "none" : "block"
-  }
+  updateSoundDisplay()
 
   if (soundEnabled) {
     bgMusic.play().catch(() => {})
@@ -351,11 +332,17 @@ function toggleSound() {
 }
 
 function updateSoundDisplay() {
-  const showSound = soundEnabled
-  soundBtnHome.style.display = showSound ? "block" : "none"
-  muteBtnHome.style.display = showSound ? "none" : "block"
-  soundBtnGameover.style.display = showSound ? "block" : "none"
-  muteBtnGameover.style.display = showSound ? "none" : "block"
+  // Home screen
+  soundBtnHome.style.display = soundEnabled ? "block" : "none"
+  muteBtnHome.style.display = soundEnabled ? "none" : "block"
+
+  // Game over screen
+  soundBtnGameover.style.display = soundEnabled ? "block" : "none"
+  muteBtnGameover.style.display = soundEnabled ? "none" : "block"
+
+  // Pause screen
+  soundBtnPause.style.display = soundEnabled ? "block" : "none"
+  muteBtnPause.style.display = soundEnabled ? "none" : "block"
 }
 
 function pauseGame() {
@@ -365,11 +352,12 @@ function pauseGame() {
   pauseOverlay.style.display = "flex"
   pauseBtn.style.display = "none"
   playBtn.style.display = "block"
-  soundBtnPause.style.display = soundEnabled ? "block" : "none"
-  muteBtnPause.style.display = soundEnabled ? "none" : "block"
+
   bgMusic.pause()
   cancelAnimationFrame(animationFrameId)
   clearInterval(pipeInterval)
+
+  updateSoundDisplay()
 }
 
 function resumeGame() {
@@ -377,6 +365,7 @@ function resumeGame() {
   pauseOverlay.style.display = "none"
   pauseBtn.style.display = "block"
   playBtn.style.display = "none"
+
   if (soundEnabled) bgMusic.play().catch(() => {})
   pipeInterval = setDynamicPipeInterval()
   cancelAnimationFrame(animationFrameId)
@@ -418,14 +407,11 @@ function startGame() {
 function animateCountdown() {
   if (!isCountdownActive) return
 
-  // Clear canvases
   context.clearRect(0, 0, board.width, board.height)
   uiContext.clearRect(0, 0, board.width, board.height)
 
-  // Draw Superman
   context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
 
-  // Animate countdown number
   const baseFontSize = 100 * scaleFactor
   const fontSize = baseFontSize + 50 * scaleFactor * (countdown - Math.floor(countdown))
   const alpha = 1 - (countdown - Math.floor(countdown))
@@ -745,6 +731,7 @@ function endGame() {
   uiContext.drawImage(highScoreImg, centerX - highScoreWidth / 2, 280 * scaleFactor, highScoreWidth, highScoreHeight)
   uiContext.fillText(highScore, centerX + 75 * scaleFactor, 330 * scaleFactor)
 
+  // Show sound controls
   soundBtnGameover.style.display = soundEnabled ? "block" : "none"
   muteBtnGameover.style.display = soundEnabled ? "none" : "block"
 
@@ -814,11 +801,15 @@ function showHomepage() {
   restartBtn.style.display = "none"
   pauseBtn.style.display = "none"
   playBtn.style.display = "none"
+  mobileInstructions.style.display = "block"
+
+  // Show sound controls
   soundBtnHome.style.display = soundEnabled ? "block" : "none"
   muteBtnHome.style.display = soundEnabled ? "none" : "block"
+
+  // Hide game over controls
   soundBtnGameover.style.display = "none"
   muteBtnGameover.style.display = "none"
-  mobileInstructions.style.display = "block"
 
   gameOver = false
   gameStarted = false
