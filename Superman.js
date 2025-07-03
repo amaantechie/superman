@@ -84,16 +84,16 @@ function resize() {
   uiCanvas.width = gameWidth
   uiCanvas.height = gameHeight
 
-  // Update superman position
+  // Update superman position and size
   superman.x = gameWidth * 0.15
   superman.y = gameHeight * 0.5
-  superman.width = gameWidth * 0.08
-  superman.height = gameWidth * 0.04
+  superman.width = Math.min(gameWidth * 0.08, 60)
+  superman.height = Math.min(gameWidth * 0.04, 30)
 
-  // Update game speed based on screen size
-  gameSpeed = gameWidth * 0.005
-  gravity = gameHeight * 0.0006
-  jumpPower = -gameHeight * 0.012
+  // Update game physics based on screen size
+  gameSpeed = Math.max(gameWidth * 0.003, 2)
+  gravity = Math.max(gameHeight * 0.0008, 0.5)
+  jumpPower = -Math.max(gameHeight * 0.015, 10)
 }
 
 function loadImages() {
@@ -344,13 +344,18 @@ function gameLoop(currentTime) {
 }
 
 function update(deltaTime) {
-  // Update superman
+  // Update superman physics
   superman.velocityY += gravity
   superman.y += superman.velocityY
 
-  // Check boundaries
-  if (superman.y < 0) superman.y = 0
-  if (superman.y > gameHeight - superman.height) {
+  // Keep superman within screen bounds
+  if (superman.y < 0) {
+    superman.y = 0
+    superman.velocityY = 0
+  }
+  if (superman.y + superman.height > gameHeight) {
+    superman.y = gameHeight - superman.height
+    superman.velocityY = 0
     endGame()
     return
   }
@@ -360,28 +365,30 @@ function update(deltaTime) {
   powerUpTimer += deltaTime
   enemyTimer += deltaTime
 
-  // Spawn pipes
-  if (pipeTimer > 2000 - level * 100) {
+  // Spawn pipes (adjusted timing)
+  if (pipeTimer > Math.max(1500 - level * 50, 800)) {
     spawnPipe()
     pipeTimer = 0
   }
 
   // Spawn power-ups
-  if (powerUpTimer > 8000) {
+  if (powerUpTimer > 10000) {
     spawnPowerUp()
     powerUpTimer = 0
   }
 
   // Spawn enemies
-  if (enemyTimer > 5000 - level * 200) {
+  if (enemyTimer > Math.max(6000 - level * 300, 3000)) {
     spawnEnemy()
     enemyTimer = 0
   }
 
   // Update pipes
-  pipes.forEach((pipe, index) => {
+  for (let i = pipes.length - 1; i >= 0; i--) {
+    const pipe = pipes[i]
     pipe.x -= gameSpeed
 
+    // Score when passing through pipes
     if (!pipe.scored && superman.x > pipe.x + pipe.width) {
       if (pipe.isTop) {
         score += 0.5
@@ -389,45 +396,55 @@ function update(deltaTime) {
       }
     }
 
-    if (pipe.x < -pipe.width) {
-      pipes.splice(index, 1)
+    // Remove pipes that are off screen
+    if (pipe.x + pipe.width < 0) {
+      pipes.splice(i, 1)
+      continue
     }
 
-    // Collision detection
+    // Collision detection with pipes
     if (!shieldActive && checkCollision(superman, pipe)) {
       endGame()
       return
     }
-  })
+  }
 
   // Update power-ups
-  powerUps.forEach((powerUp, index) => {
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const powerUp = powerUps[i]
     powerUp.x -= gameSpeed
 
-    if (powerUp.x < -powerUp.width) {
-      powerUps.splice(index, 1)
+    // Remove power-ups that are off screen
+    if (powerUp.x + powerUp.width < 0) {
+      powerUps.splice(i, 1)
+      continue
     }
 
+    // Collision with power-ups
     if (checkCollision(superman, powerUp)) {
       shieldActive = true
       shieldEndTime = Date.now() + 5000
-      powerUps.splice(index, 1)
+      powerUps.splice(i, 1)
     }
-  })
+  }
 
   // Update enemies
-  enemies.forEach((enemy, index) => {
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const enemy = enemies[i]
     enemy.x -= gameSpeed * 1.2
 
-    if (enemy.x < -enemy.width) {
-      enemies.splice(index, 1)
+    // Remove enemies that are off screen
+    if (enemy.x + enemy.width < 0) {
+      enemies.splice(i, 1)
+      continue
     }
 
+    // Collision with enemies
     if (!shieldActive && checkCollision(superman, enemy)) {
       endGame()
       return
     }
-  })
+  }
 
   // Update shield
   if (shieldActive && Date.now() > shieldEndTime) {
@@ -501,14 +518,14 @@ function render() {
 }
 
 function spawnPipe() {
-  const pipeWidth = gameWidth * 0.15
-  const pipeHeight = gameHeight * 0.8
-  const gap = gameHeight * 0.25
-  const minY = gameHeight * 0.1
+  const pipeWidth = gameWidth * 0.12
+  const pipeHeight = gameHeight * 1.2
+  const gap = gameHeight * 0.3
+  const minY = gameHeight * 0.2
   const maxY = gameHeight * 0.6
   const pipeY = minY + Math.random() * (maxY - minY)
 
-  const isObstacle = Math.random() < 0.3 + level * 0.1
+  const isObstacle = Math.random() < Math.min(0.2 + level * 0.05, 0.6)
 
   // Top pipe
   pipes.push({
@@ -552,11 +569,13 @@ function spawnEnemy() {
 }
 
 function checkCollision(rect1, rect2) {
+  // Add small margin to make collision more forgiving
+  const margin = 5
   return (
-    rect1.x < rect2.x + rect2.width &&
-    rect1.x + rect1.width > rect2.x &&
-    rect1.y < rect2.y + rect2.height &&
-    rect1.y + rect1.height > rect2.y
+    rect1.x + margin < rect2.x + rect2.width &&
+    rect1.x + rect1.width - margin > rect2.x &&
+    rect1.y + margin < rect2.y + rect2.height &&
+    rect1.y + rect1.height - margin > rect2.y
   )
 }
 
