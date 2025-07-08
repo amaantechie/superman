@@ -232,7 +232,11 @@ function setupEventListeners() {
     { passive: false },
   )
 
-  // Global touch handler for game control
+  // Add touch handler to the entire game container for gameplay
+  const gameContainer = document.querySelector(".game-container")
+  gameContainer.addEventListener("touchstart", handleContainerTouch, { passive: false })
+
+  // Global touch handler for game control (reduced functionality)
   document.addEventListener("touchstart", handleGlobalTouch, { passive: false })
 }
 
@@ -288,10 +292,11 @@ function setupButton(button, callback) {
 }
 
 function handleGameTouchStart(e) {
-  if (!gameStarted || gameOver || isPaused || isCountdownActive) return
-
   e.preventDefault()
   e.stopPropagation()
+
+  // Only handle game touches during active gameplay
+  if (!gameStarted || gameOver || isPaused || isCountdownActive) return
 
   isTouchActive = true
   touchStartTime = Date.now()
@@ -301,7 +306,7 @@ function handleGameTouchStart(e) {
   velocityY = -6
   if (soundEnabled) {
     flySound.currentTime = 0
-    flySound.play()
+    flySound.play().catch(() => {}) // Handle audio play errors gracefully
   }
 }
 
@@ -325,16 +330,30 @@ function handleGlobalTouch(e) {
     return
   }
 
-  // If game is over, restart
-  if (gameOver) {
-    restartGame()
-    return
-  }
-
   // If game is paused, resume
   if (isPaused) {
     resumeGame()
     return
+  }
+}
+
+function handleContainerTouch(e) {
+  // Don't handle if touching a button
+  if (e.target.closest(".game-control")) return
+
+  // Don't handle if touching pause overlay
+  if (e.target.closest(".pause-overlay")) return
+
+  e.preventDefault()
+  e.stopPropagation()
+
+  // Only handle Superman jumping during active gameplay
+  if (gameStarted && !gameOver && !isPaused && !isCountdownActive) {
+    velocityY = -6
+    if (soundEnabled) {
+      flySound.currentTime = 0
+      flySound.play().catch(() => {})
+    }
   }
 }
 
