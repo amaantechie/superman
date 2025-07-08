@@ -22,57 +22,35 @@
             background-color: #000;
             touch-action: none;
             position: fixed;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            display: block;
         }
         
         .game-container {
             position: relative;
-            width: 360px;
-            height: 640px;
-            max-width: 100vw;
-            max-height: 100vh;
+            width: 100vw;
+            height: 100vh;
             background-color: #000;
             overflow: hidden;
             touch-action: none;
         }
 
-        /* Enhanced Responsive scaling */
-        @media (max-width: 360px) {
+        /* Remove all the existing media queries for .game-container and replace with: */
+        @media (orientation: portrait) {
             .game-container {
                 width: 100vw;
-                height: calc(100vw * 1.778);
-                max-height: 100vh;
-            }
-        }
-
-        @media (max-height: 640px) {
-            .game-container {
                 height: 100vh;
-                width: calc(100vh * 0.5625);
-                max-width: 100vw;
             }
         }
 
-        /* Ultra-wide screens */
-        @media (min-aspect-ratio: 2/1) {
+        @media (orientation: landscape) {
             .game-container {
-                height: 90vh;
-                width: calc(90vh * 0.5625);
+                width: 100vw;
+                height: 100vh;
             }
         }
 
-        /* Very tall screens */
-        @media (max-aspect-ratio: 1/2) {
-            .game-container {
-                width: 95vw;
-                height: calc(95vw * 1.778);
-            }
-        }
-        
         #homepage, #board, #ui {
             position: absolute;
             top: 0;
@@ -81,16 +59,27 @@
             height: 100%;
             touch-action: none;
         }
-        
+
         #homepage { 
             z-index: 10; 
             background-size: cover;
             background-position: center;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
         }
-        #board { z-index: 1; }
+
+        #board { 
+            z-index: 1;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+
         #ui { 
             z-index: 15;
             pointer-events: none;
+            width: 100vw !important;
+            height: 100vh !important;
         }
 
         /* Standardized Button Styles */
@@ -153,6 +142,12 @@
             top: 65%;
             transform: translateX(-50%);
         }
+
+        #achievements-btn {
+            left: 50%;
+            top: 75%;
+            transform: translateX(-50%);
+        }
         
         /* Game Over Screen Layout - Fixed Overlapping */
         #restart-btn {
@@ -199,6 +194,114 @@
             display: flex;
         }
 
+        /* Achievement System Styles */
+        .achievements-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 20px;
+            overflow-y: auto;
+            pointer-events: auto;
+        }
+
+        .achievements-header {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 20px;
+        }
+
+        .achievement-card {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .achievement-card.unlocked {
+            background: rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .achievement-card.locked {
+            opacity: 0.5;
+            border-color: #666;
+        }
+
+        .achievement-icon {
+            font-size: 30px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .achievement-title {
+            color: #FFD700;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .achievement-description {
+            color: #FFF;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        .achievement-notification {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.95);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+            animation: achievementPop 3s ease-in-out;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+        }
+
+        @keyframes achievementPop {
+            0% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            10% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            90% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            100% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+        }
+
+        .close-achievements {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
         #board, #ui { display: none; }
         #homepage { display: block; }
 
@@ -229,10 +332,35 @@
                 top: 60%;
             }
 
+            #achievements-btn {
+                top: 70%;
+            }
+
             #restart-btn,
             #sound-btn-gameover,
             #mute-btn-gameover {
                 top: 70%;
+            }
+
+            .achievements-grid {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 280px;
+            }
+
+            .achievement-card {
+                padding: 10px;
+            }
+
+            .achievement-icon {
+                font-size: 24px;
+            }
+
+            .achievement-title {
+                font-size: 11px;
+            }
+
+            .achievement-description {
+                font-size: 9px;
             }
         }
 
@@ -267,6 +395,11 @@
                 right: 10px;
                 top: 10px;
             }
+
+            .achievements-grid {
+                grid-template-columns: 1fr;
+                max-width: 250px;
+            }
         }
 
         /* Landscape orientation adjustments */
@@ -278,6 +411,10 @@
             
             #start-btn {
                 top: 55%;
+            }
+
+            #achievements-btn {
+                top: 65%;
             }
             
             #restart-btn,
@@ -322,6 +459,11 @@
                 min-width: 55px;
                 min-height: 55px;
             }
+
+            .achievements-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-width: 350px;
+            }
         }
 
         /* Prevent text selection and context menus */
@@ -363,6 +505,9 @@
         <button id="start-btn" class="game-control btn-large" aria-label="Start Game">
             <img src="images/start.png" alt="Start Game">
         </button>
+        <button id="achievements-btn" class="game-control btn-medium" aria-label="View Achievements">
+            🏆
+        </button>
         <button id="restart-btn" class="game-control btn-medium" aria-label="Restart Game">
             <img src="images/retry.png" alt="Restart Game">
         </button>
@@ -398,6 +543,20 @@
             <button id="mute-btn-pause" class="game-control btn-medium" aria-label="Sound Off">
                 <img src="images/mute.png" alt="Sound Off">
             </button>
+        </div>
+
+        <!-- Achievements Overlay -->
+        <div id="achievements-overlay" class="achievements-overlay">
+            <div class="achievements-header">🏆 ACHIEVEMENTS 🏆</div>
+            <div id="achievements-grid" class="achievements-grid">
+                <!-- Achievement cards will be populated by JavaScript -->
+            </div>
+            <button class="close-achievements" onclick="closeAchievements()">CLOSE</button>
+        </div>
+
+        <!-- Achievement Notification -->
+        <div id="achievement-notification" class="achievement-notification">
+            <span id="achievement-text"></span>
         </div>
     </div>
     <script src="Superman.js"></script>
