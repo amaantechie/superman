@@ -1,7 +1,6 @@
 // Game constants
-let boardWidth = window.innerWidth;
-let boardHeight = window.innerHeight;
-
+let boardWidth = 360;
+let boardHeight = 640;
 let context;
 let uiContext;
 let homepage = document.getElementById("homepage");
@@ -23,8 +22,7 @@ let lastPowerUpSpawn = 0;
 let powerUpSpawnInterval = 10000; // 10 seconds
 let enemyArray = [];
 let enemySpawnInterval = 4000; // 4 seconds
-let lastEnemySpawn = 0;
-// Enemy parameters
+let lastEnemySpawn = 0; // Enemy parameters
 let baseEnemySpeed = -4;
 let enemySpeedIncrease = -0.5; // Speed increase per level
 let maxEnemySpeed = -8;        // Maximum enemy speed
@@ -34,26 +32,23 @@ const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200; // How much faster pipes spawn pe
 
 
 // Superman
-let SupermanWidth = boardWidth * 0.2; // 20% width
-let SupermanHeight = SupermanWidth * 0.433; // same aspect ratio
-
+let SupermanWidth = 74.8;
+let SupermanHeight = 32.4;
 let SupermanX = boardWidth / 8;
 let SupermanY = boardHeight / 2;
 let SupermanImg;
 
 let Superman = {
-    x: boardWidth / 8,
-    y: boardHeight / 2,
+    x: SupermanX,
+    y: SupermanY,
     width: SupermanWidth,
     height: SupermanHeight,
 };
 
-
 // Pipes
 let pipeArray = [];
-let pipeWidth = boardWidth * 0.18;
-let pipeHeight = boardHeight * 0.8;
-
+let pipeWidth = 64;
+let pipeHeight = 512;
 let pipeX = boardWidth;
 let pipeY = 0;
 
@@ -93,6 +88,8 @@ let currentLevel = 0;
 let lastLevelCheckpoint = 0;
 let countdown = 3;
 let isCountdownActive = false;
+let lastPipeGap = { top: 0, bottom: 0 }; // Stores the Y-range of the pipe gap
+
 
 // Level animation
 let isLevelAnimating = false;
@@ -100,9 +97,9 @@ let levelAnimationStartTime = 0;
 const levelAnimationDuration = 1000;
 
 // Sound elements
-let bgMusic = new Audio('bg.mp3');
-let flySound = new Audio('fly.mp3');
-let hitSound = new Audio('hit.mp3');
+let bgMusic = new Audio('./sound/bg.mp3');
+let flySound = new Audio('./sound/fly.mp3');
+let hitSound = new Audio('./sound/hit.mp3');
 let soundEnabled = true;
 let isPaused = false;
 
@@ -122,42 +119,40 @@ window.onload = function () {
     board.width = boardWidth;
     context = board.getContext("2d");
 
-    let uiCanvas = document.getElementById("ui"); 
+    let uiCanvas = document.getElementById("ui");
     uiCanvas.height = boardHeight;
     uiCanvas.width = boardWidth;
     uiContext = uiCanvas.getContext("2d");
 
-    resizeGame();
-
     // Load images
 
 
-    powerUpImg.src = "./powerups.png";
-    enemyImg.src = "./enemy.png";
+    powerUpImg.src = "./images/powerups.png";
+    enemyImg.src = "./images/enemy.png";
 
     SupermanImg = new Image();
-    SupermanImg.src = "./superman1.png";
+    SupermanImg.src = "./images/superman1.png";
 
     topPipeImg = new Image();
-    topPipeImg.src = "./toppipe.png";
+    topPipeImg.src = "./images/toppipe.png";
 
     bottomPipeImg = new Image();
-    bottomPipeImg.src = "./bottompipe.png";
+    bottomPipeImg.src = "./images/bottompipe.png";
 
     newTopPipeImg = new Image();
-    newTopPipeImg.src = "./pipe11.png";
+    newTopPipeImg.src = "./images/pipe11.png";
 
     newBottomPipeImg = new Image();
-    newBottomPipeImg.src = "./pipe1.png";
+    newBottomPipeImg.src = "./images/pipe1.png";
 
     gameOverImg = new Image();
-    gameOverImg.src = "./gameover.png";
+    gameOverImg.src = "./images/gameover.png";
 
     highScoreImg = new Image();
-    highScoreImg.src = "./highscore.png";
+    highScoreImg.src = "./images/highscore.png";
 
     collisionImg = new Image();
-    collisionImg.src = "./collision.png";
+    collisionImg.src = "./images/collision.png";
 
     // Initialize sound
     bgMusic.loop = true;
@@ -167,7 +162,6 @@ window.onload = function () {
     startBtn.addEventListener("click", startGame);
     restartBtn.addEventListener("click", restartGame);
     document.addEventListener("keydown", handleKeyPress);
-    document.addEventListener("touchstart", handleTouchStart);
     pauseBtn.addEventListener("click", pauseGame);
     playBtn.addEventListener("click", resumeGame);
     soundBtnHome.addEventListener("click", toggleSound);
@@ -177,26 +171,11 @@ window.onload = function () {
     resumeBtn.addEventListener("click", resumeGame);
     soundBtnPause.addEventListener("click", toggleSound);
     muteBtnPause.addEventListener("click", toggleSound);
-    window.addEventListener("resize", resizeGame);
+    document.addEventListener("touchstart", handleTouch);
+
 
     showHomepage();
 };
-
-function resizeGame() {
-    boardWidth = window.innerWidth;
-    boardHeight = window.innerHeight;
-
-    board.width = boardWidth;
-    board.height = boardHeight;
-
-    ui.width = boardWidth;
-    ui.height = boardHeight;
-
-    // Recalculate positions/sizes
-    Superman.x = boardWidth / 8;
-    Superman.width = boardWidth * 0.2;
-    Superman.height = Superman.width * 0.433;
-}
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
@@ -286,7 +265,7 @@ function animateCountdown() {
     // Clear canvases
     context.clearRect(0, 0, board.width, board.height);
     uiContext.clearRect(0, 0, board.width, board.height);
-z
+
     // Draw Superman
     context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height);
 
@@ -322,13 +301,12 @@ function update() {
     context.clearRect(0, 0, board.width, board.height);
     uiContext.clearRect(0, 0, board.width, board.height);
 
-    currentLevel = Math.floor(score / 10);
+    currentLevel = Math.floor(score / 15);
     if (currentLevel > lastLevelCheckpoint && !isLevelAnimating) {
         isLevelAnimating = true;
         levelAnimationStartTime = Date.now();
         updateDifficulty();
     }
-   
 
     // UI elements
     uiContext.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -360,12 +338,8 @@ function update() {
 
         if (detectCollision(Superman, pipe)) {
             // Draw collision image 1x the size of Superman, centered on Superman
-            let scale = 1;
-            let collisionW = Superman.width * scale;
-            let collisionH = Superman.height * scale;
-            let collisionX = Superman.x + (Superman.width - collisionW) / 2;
-            let collisionY = Superman.y + (Superman.height - collisionH) / 2;
-            context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH);
+            drawCollisionEffect(Superman.x, Superman.y, Superman.width, Superman.height);
+
             endGame(pipe);
         }
         
@@ -379,15 +353,11 @@ function update() {
         lastLevelCheckpoint = currentLevel;
         if (pipeInterval) clearInterval(pipeInterval);
         pipeInterval = setDynamicPipeInterval();
-        placePipes(); // ✅ Immediately spawn a pipe after level up
     }
-    
 
     // Score display
     uiContext.fillStyle = "#FFD700";
-    let responsiveFontSize = Math.floor(boardWidth / 8); // adjust as needed
-uiContext.font = `bold ${responsiveFontSize}px 'Arial Black'`;
-
+    uiContext.font = "bold 45px 'Arial Black'";
     uiContext.textAlign = "center";
     uiContext.fillText(Math.floor(score), boardWidth / 2, 100);
 
@@ -467,12 +437,8 @@ if (shieldActive) {
         
         if (!shieldActive && detectCollision(Superman, e)) {
             // Draw collision image 1x the size of Superman, centered on Superman
-            let scale = 1;
-            let collisionW = Superman.width * scale;
-            let collisionH = Superman.height * scale;
-            let collisionX = Superman.x + (Superman.width - collisionW) / 2;
-            let collisionY = Superman.y + (Superman.height - collisionH) / 2;
-            context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH);
+            drawCollisionEffect(Superman.x, Superman.y, Superman.width, Superman.height);
+
             endGame();
         }
         
@@ -481,17 +447,18 @@ if (shieldActive) {
         if (e.x < -e.width) enemyArray.splice(i, 1);
     }
 
-    // Spawn new powerups
-    if (Date.now() - lastPowerUpSpawn > powerUpSpawnInterval) {
-        spawnPowerUp();
-        lastPowerUpSpawn = Date.now();
-    }
+    const now = Date.now();
 
-    // Spawn new enemies
-    if (Date.now() - lastEnemySpawn > enemySpawnInterval) {
-        spawnEnemy();
-        lastEnemySpawn = Date.now();
-    }
+if (now - lastPowerUpSpawn > powerUpSpawnInterval) {
+    spawnPowerUp();
+    lastPowerUpSpawn = now;
+}
+
+if (now - lastEnemySpawn > enemySpawnInterval) {
+    spawnEnemy();
+    lastEnemySpawn = now;
+}
+
 }
 
 function updateDifficulty() {
@@ -503,21 +470,20 @@ function updateDifficulty() {
 
 function placePipes() {
     if (gameOver || !gameStarted) return;
-
-    // Avoid placing pipes too close to each other
-    if (pipeArray.length > 0) {
-        let lastPipe = pipeArray[pipeArray.length - 1];
-        if (lastPipe.x > boardWidth - 150) return; // Adjust spacing here
-    }
-
     const currentGap = basePipeGap;
-    let minPipeY = -pipeHeight + 50;
-    let maxPipeY = 0 - currentGap - 150;
+    let minPipeY = -pipeHeight + 50; // Original minimum Y position
+    let maxPipeY = 0 - currentGap - 150; // Original maximum Y position
     let randomPipeY = Math.random() * (maxPipeY - minPipeY) + minPipeY;
+
+    let gapTopY = randomPipeY + pipeHeight;
+let gapBottomY = gapTopY + basePipeGap;
+lastPipeGap = { top: gapTopY, bottom: gapBottomY }; // Save the current gap
+
 
     let obstacleChance = baseObstacleChance + currentLevel * obstacleIncreasePerLevel;
     obstacleChance = Math.min(obstacleChance, 0.75);
 
+    // Restore original pipe type logic
     let topPipeType = Math.random() < obstacleChance ? "obstacle" : "normal";
     let bottomPipeType = Math.random() < obstacleChance ? "obstacle" : "normal";
 
@@ -542,7 +508,6 @@ function placePipes() {
         passed: false,
     });
 }
-
 
 function setDynamicPipeInterval() {
     // Cap level at MAX_DIFFICULTY_LEVEL for interval calculation
@@ -581,17 +546,25 @@ function handleKeyPress(e) {
     if (gameOver && e.code === "Enter") restartGame();
 }
 
-function handleTouchStart(e) {
-    e.preventDefault(); // Prevents accidental scrolling or zooming
+function handleTouch(e) {
+    e.preventDefault(); // prevent scrolling on mobile
 
     if (isCountdownActive) return;
 
+    // Start game if not started yet
     if (!gameStarted && !gameOver) {
         startGame();
         return;
     }
 
-    if (gameStarted && !gameOver) {
+    // If game is over, restart
+    if (gameOver) {
+        restartGame();
+        return;
+    }
+
+    // Fly action
+    if (gameStarted && !gameOver && !isPaused) {
         velocityY = -6;
         if (soundEnabled) {
             flySound.currentTime = 0;
@@ -599,13 +572,21 @@ function handleTouchStart(e) {
         }
     }
 
-    if (gameOver) restartGame();
+    // If game is paused, resume
+    if (isPaused) {
+        resumeGame();
+    }
 }
+
 
 function restartGame() {
     if (pipeInterval) {
         clearInterval(pipeInterval);
         pipeInterval = null;
+    }
+
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
     }
 
     gameOver = false;
@@ -627,8 +608,6 @@ function restartGame() {
 
     if (soundEnabled) bgMusic.play();
     showHomepage();
-    powerUpArray = [];
-    enemyArray = [];
     document.getElementById("powerup-count").textContent = "Double Jumps: 0";
 }
 
@@ -696,27 +675,41 @@ function spawnPowerUp() {
         img: powerUpImg,
         x: boardWidth,
         y: Math.random() * (boardHeight - 40),
-        width: boardWidth * 0.1,
-height: boardWidth * 0.1,
-
+        width: 40,
+        height: 40
     });
 }
 
 function spawnEnemy() {
+    let enemyHeight = 40;
+    let y;
+    let tries = 0;
+
+    // Retry logic to avoid spawning in the pipe gap
+    do {
+        y = Math.random() * (boardHeight - enemyHeight);
+        tries++;
+    } while (
+        lastPipeGap &&
+        y + enemyHeight > lastPipeGap.top &&
+        y < lastPipeGap.bottom &&
+        tries < 10
+    );
+
     let speed = baseEnemySpeed + (enemySpeedIncrease * currentLevel);
-    speed = Math.max(maxEnemySpeed, speed); // Cap at maximum speed
-    speed += (Math.random() - 0.5); // Add random variation
+    speed = Math.max(maxEnemySpeed, speed);
+    speed += (Math.random() - 0.5); // Small random variation
 
     enemyArray.push({
         img: enemyImg,
         x: boardWidth,
-        y: Math.random() * (boardHeight - 60),
-        width: boardWidth * 0.1,
-height: boardWidth * 0.1,
-
+        y: y,
+        width: 60,
+        height: enemyHeight,
         speed: speed
     });
-}   
+}
+
 
 // Modified collision detection
 function detectCollision(a, b) {
@@ -728,7 +721,17 @@ function detectCollision(a, b) {
         a.y < b.y + b.height &&
         a.y + a.height > b.y
     );
-}   
+}
+
+function drawCollisionEffect(x, y, width, height) {
+    let scale = 1;
+    let collisionW = width * scale;
+    let collisionH = height * scale;
+    let collisionX = x + (width - collisionW) / 2;
+    let collisionY = y + (height - collisionH) / 2;
+    context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH);
+}
+
 
 function showHomepage() {
     // Reset all displays
