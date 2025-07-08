@@ -45,7 +45,8 @@ body {
 }
 
 #restart-btn,
-#sound-btn-gameover {
+#sound-btn-gameover,
+#achievements-btn {
   display: none;
 }
 
@@ -63,6 +64,9 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
+  font-size: 40px;
+  color: #ffd700;
+  font-weight: bold;
 }
 
 .game-control:active,
@@ -140,6 +144,30 @@ canvas {
   pointer-events: none;
 }
 
+/* Achievement notification animation */
+@keyframes achievementPop {
+  0% {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+  10% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  90% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+}
+
+.achievement-notification {
+  animation: achievementPop 3s ease-in-out;
+}
+
 /* Pause overlay styling */
 .pause-overlay {
   position: absolute;
@@ -161,16 +189,84 @@ canvas {
   display: flex;
 }
 
+/* Achievement overlay styling */
+.achievements-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: #ffd700 transparent;
+}
+
+.achievements-overlay::-webkit-scrollbar {
+  width: 6px;
+}
+
+.achievements-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.achievements-overlay::-webkit-scrollbar-thumb {
+  background: #ffd700;
+  border-radius: 3px;
+}
+
+.achievement-card {
+  transition: all 0.3s ease;
+}
+
+.achievement-card:hover {
+  transform: translateY(-2px);
+}
+
+.achievement-card.unlocked {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.achievement-card.locked {
+  border-color: #666;
+  opacity: 0.6;
+}
+
+.close-achievements {
+  transition: all 0.2s ease;
+}
+
+.close-achievements:hover {
+  background: #fff;
+  transform: scale(1.05);
+}
+
+.close-achievements:active {
+  transform: scale(0.95);
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .pause-overlay {
     gap: 25px;
+  }
+
+  .achievements-overlay {
+    padding: 15px;
+  }
+
+  .achievements-header {
+    font-size: 20px;
+    margin-bottom: 15px;
   }
 }
 
 @media (max-width: 320px) {
   .pause-overlay {
     gap: 20px;
+  }
+
+  .achievements-overlay {
+    padding: 10px;
+  }
+
+  .achievements-header {
+    font-size: 18px;
+    margin-bottom: 10px;
   }
 }
 
