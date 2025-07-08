@@ -1,159 +1,201 @@
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #000;
-    -webkit-tap-highlight-color: transparent; /* Prevent tap highlight */
-    touch-action: manipulation; /* Improve touch responsiveness */
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #000;
+  touch-action: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  font-family: Arial, sans-serif;
 }
 
 #board {
-    background-image: url("images/backgrond.png");
-    touch-action: none; /* Prevent canvas from interfering with touches */
+  background-image: url("images/backgrond.png");
+  background-size: cover;
+  background-position: center;
+  touch-action: none;
+  image-rendering: optimizeSpeed;
 }
 
 /* Game Over Screen Elements */
 .game-over-elements {
-    display: none;
-    position: absolute;
-    z-index: 20;
+  display: none;
+  position: absolute;
+  z-index: 20;
 }
 
 /* Button Visibility Control */
+#sound-btn-home,
 #mute-btn-home,
-#play-btn,
-#mute-btn-gameover {
-    display: none;
+#sound-btn-gameover,
+#mute-btn-gameover,
+#sound-btn-pause,
+#mute-btn-pause {
+  display: none;
 }
 
 #restart-btn,
 #sound-btn-gameover {
-    display: none;
+  display: none;
 }
 
-/* Z-index adjustments */
-#homepage { z-index: 10; }
-#board { z-index: 1; }
-#ui { 
-    z-index: 15; /* Increased z-index for UI */
-    pointer-events: none; /* Allow touches to pass through to buttons */
-}
-
-/* Button Styles - Enhanced for Mobile */
+/* Enhanced Button Styles for Mobile */
 .game-control {
-    pointer-events: auto;
-    cursor: pointer;
-    min-width: 48px; /* Minimum recommended touch target size */
-    min-height: 48px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+  pointer-events: auto;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-control:hover {
+  transform: scale(1.05);
+}
+
+.game-control:active,
+.game-control.button-active {
+  transform: scale(0.9);
+  opacity: 0.7;
 }
 
 .game-control img {
-    pointer-events: none; /* Make sure images don't block touches */
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* Better image scaling */
-}
-
-/* Sound Control Positions */
-#start-btn {
-    left: 200px;
-    top: 400px;
-    width: 80px;
-    height: 80px;
-}
-
-#sound-btn-home, #mute-btn-home {
-    left: 10px;
-    top: 10px;
-    width: 48px; /* Increased for better touch */
-    height: 48px;
-}
-
-#pause-overlay img {
-    width: 80px;
-    height: 80px;
-    margin: 0 15px;   
-}
-
-#sound-btn-gameover, #mute-btn-gameover {
-    left: 200px;
-    top: 400px;
-    width: 80px;
-    height: 80px;
-}
-
-/* Pause Overlay Styling */
-.pause-overlay {
-    display: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 25; /* Higher than other elements */
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-}
-
-.pause-overlay .game-control {
-    margin: 10px 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: optimizeSpeed;
 }
 
 /* Performance optimizations */
 canvas {
-    will-change: transform;
-    image-rendering: optimizeSpeed;
+  will-change: transform;
+  image-rendering: optimizeSpeed;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
 }
 
-/* Enemy animations */
+/* Animations */
 @keyframes enemyFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .enemy {
-    animation: enemyFloat 2s ease-in-out infinite;
+  animation: enemyFloat 2s ease-in-out infinite;
 }
 
-/* Add shield animation */
 @keyframes shield-pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .powerup-shield {
-    animation: shield-pulse 1.5s infinite;
-    pointer-events: none;
+  animation: shield-pulse 1.5s infinite;
+  pointer-events: none;
 }
 
-/* Mobile-specific adjustments */
+/* Mobile-specific touch improvements */
 @media (hover: none) and (pointer: coarse) {
-    /* Increase touch targets for mobile */
-    .game-control {
-        min-width: 60px;
-        min-height: 60px;
-    }
-    
-    #start-btn, #restart-btn,
-    #sound-btn-gameover, #mute-btn-gameover {
-        width: 90px;
-        height: 90px;
-    }
-    
-    /* Adjust positions for better reachability */
-    #start-btn {
-        top: 380px;
-    }
-    
-    #restart-btn, #sound-btn-gameover, #mute-btn-gameover {
-        top: 380px;
-    }
+  .game-control {
+    transition: transform 0.05s ease;
+  }
+
+  .game-control:active {
+    transform: scale(0.85);
+  }
 }
+
+/* Responsive canvas scaling */
+@media (max-width: 360px) {
+  #board,
+  #ui {
+    image-rendering: pixelated;
+  }
+}
+
+/* Prevent scrolling and zooming on mobile */
+html {
+  touch-action: none;
+  -webkit-text-size-adjust: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+  }
+}
+
+/* Accessibility improvements */
+.game-control:focus {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* Loading states */
+.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Prevent context menu on long press */
+.game-container {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Improve button feedback on touch */
+.game-control::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: transparent;
+  border-radius: 12px;
+  z-index: -1;
+}
+
+.game-control:active::before {
+  background: rgba(255, 215, 0, 0.1);
+}
+
