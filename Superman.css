@@ -128,19 +128,39 @@ canvas {
 /* Mobile-specific touch improvements */
 @media (hover: none) and (pointer: coarse) {
   .game-control {
-    transition: transform 0.05s ease;
+    min-width: 70px;
+    min-height: 70px;
+    padding: 10px;
   }
 
-  .game-control:active {
-    transform: scale(0.85);
+  #start-btn {
+    width: 200px;
+    height: 90px;
+    min-width: 200px;
+    min-height: 90px;
   }
-}
 
-/* Responsive canvas scaling */
-@media (max-width: 360px) {
-  #board,
-  #ui {
-    image-rendering: pixelated;
+  #restart-btn,
+  #sound-btn-gameover,
+  #mute-btn-gameover {
+    width: 110px;
+    height: 110px;
+    min-width: 110px;
+    min-height: 110px;
+  }
+
+  .sound-control {
+    width: 70px;
+    height: 70px;
+    min-width: 70px;
+    min-height: 70px;
+  }
+
+  .pause-overlay .game-control {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
   }
 }
 
@@ -199,3 +219,26 @@ html {
   background: rgba(255, 215, 0, 0.1);
 }
 
+.pause-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 25;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  pointer-events: auto;
+}
+
+.pause-overlay .game-control {
+  display: flex;
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  min-height: 70px;
+}
