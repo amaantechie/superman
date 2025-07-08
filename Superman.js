@@ -22,13 +22,12 @@ let lastPowerUpSpawn = 0;
 let powerUpSpawnInterval = 10000; // 10 seconds
 let enemyArray = [];
 let enemySpawnInterval = 4000; // 4 seconds
-let lastEnemySpawn = 0; // Enemy parameters
+let lastEnemySpawn = 0;
 let baseEnemySpeed = -4;
-let enemySpeedIncrease = -0.5; // Speed increase per level
-let maxEnemySpeed = -8;        // Maximum enemy speed
-// Difficulty caps
+let enemySpeedIncrease = -0.5;
+let maxEnemySpeed = -8;
 const MAX_DIFFICULTY_LEVEL = 5;
-const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200; // How much faster pipes spawn per level
+const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200;
 
 
 // Superman
@@ -42,7 +41,7 @@ let Superman = {
     x: SupermanX,
     y: SupermanY,
     width: SupermanWidth,
-    height: SupermanHeight,
+    height: SupermanHeight
 };
 
 // Pipes
@@ -111,9 +110,10 @@ const muteBtnHome = document.getElementById("mute-btn-home");
 const soundBtnGameover = document.getElementById("sound-btn-gameover");
 const muteBtnGameover = document.getElementById("mute-btn-gameover");
 
+// Mobile detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-
-window.onload = function () {
+window.onload = function() {
     board = document.getElementById("board");
     board.height = boardHeight;
     board.width = boardWidth;
@@ -125,32 +125,22 @@ window.onload = function () {
     uiContext = uiCanvas.getContext("2d");
 
     // Load images
-
-
     powerUpImg.src = "./images/powerups.png";
     enemyImg.src = "./images/enemy.png";
-
     SupermanImg = new Image();
     SupermanImg.src = "./images/superman1.png";
-
     topPipeImg = new Image();
     topPipeImg.src = "./images/toppipe.png";
-
     bottomPipeImg = new Image();
     bottomPipeImg.src = "./images/bottompipe.png";
-
     newTopPipeImg = new Image();
     newTopPipeImg.src = "./images/pipe11.png";
-
     newBottomPipeImg = new Image();
     newBottomPipeImg.src = "./images/pipe1.png";
-
     gameOverImg = new Image();
     gameOverImg.src = "./images/gameover.png";
-
     highScoreImg = new Image();
     highScoreImg.src = "./images/highscore.png";
-
     collisionImg = new Image();
     collisionImg.src = "./images/collision.png";
 
@@ -158,42 +148,87 @@ window.onload = function () {
     bgMusic.loop = true;
     updateSoundDisplay();
 
-    // Event listeners
-    startBtn.addEventListener("click", startGame);
-    restartBtn.addEventListener("click", restartGame);
-    document.addEventListener("keydown", handleKeyPress);
-    pauseBtn.addEventListener("click", pauseGame);
-    playBtn.addEventListener("click", resumeGame);
-    soundBtnHome.addEventListener("click", toggleSound);
-    muteBtnHome.addEventListener("click", toggleSound);
-    soundBtnGameover.addEventListener("click", toggleSound);
-    muteBtnGameover.addEventListener("click", toggleSound);
-    resumeBtn.addEventListener("click", resumeGame);
-    soundBtnPause.addEventListener("click", toggleSound);
-    muteBtnPause.addEventListener("click", toggleSound);
-    document.addEventListener("touchstart", handleTouch);
-
-
+    // Setup event listeners
+    setupEventListeners();
     showHomepage();
 };
+
+    function setupEventListeners() {
+    // Setup buttons with both mouse and touch support
+    setupButton(startBtn, startGame);
+    setupButton(restartBtn, restartGame);
+    setupButton(pauseBtn, pauseGame);
+    setupButton(playBtn, resumeGame);
+    setupButton(resumeBtn, resumeGame);
+    setupButton(soundBtnHome, toggleSound);
+    setupButton(muteBtnHome, toggleSound);
+    setupButton(soundBtnGameover, toggleSound);
+    setupButton(muteBtnGameover, toggleSound);
+    setupButton(soundBtnPause, toggleSound);
+    setupButton(muteBtnPause, toggleSound);
+
+    // Keyboard controls
+    document.addEventListener("keydown", handleKeyPress);
+    
+    // Touch controls
+    document.addEventListener("touchstart", handleTouch, { passive: false });
+    board.addEventListener("touchstart", handleGameTouch, { passive: false });
+}
+
+function setupButton(button, callback) {
+    if (!button) return;
+    
+    // Remove existing event listeners to avoid duplicates
+    button.removeEventListener("click", callback);
+    button.removeEventListener("touchend", callback);
+    
+    // Add both mouse and touch events
+    button.addEventListener("click", callback);
+    button.addEventListener("touchend", function(e) {
+        e.preventDefault();
+        callback();
+    });
+    
+    // Visual feedback for touch
+    button.addEventListener("touchstart", function() {
+        button.classList.add("button-active");
+    });
+    button.addEventListener("touchend", function() {
+        button.classList.remove("button-active");
+    });
+}
+
+function handleGameTouch(e) {
+    if (!gameStarted || gameOver || isPaused || isCountdownActive) return;
+    
+    e.preventDefault();
+    velocityY = -6;
+    if (soundEnabled) {
+        flySound.currentTime = 0;
+        flySound.play();
+    }
+}
 
 function toggleSound() {
     soundEnabled = !soundEnabled;
     
-    // Update only relevant controls based on current screen
-    if (gameOver) {
-        soundBtnGameover.style.display = soundEnabled ? "block" : "none";
-        muteBtnGameover.style.display = soundEnabled ? "none" : "block";
-    } else if (isPaused) {
-        soundBtnPause.style.display = soundEnabled ? "block" : "none";
-        muteBtnPause.style.display = soundEnabled ? "none" : "block";
-    } else if (!gameStarted) {
-        soundBtnHome.style.display = soundEnabled ? "block" : "none";
-        muteBtnHome.style.display = soundEnabled ? "none" : "block";
-    }
+    // Update all sound controls at once
+    const soundButtons = [soundBtnHome, soundBtnGameover, soundBtnPause];
+    const muteButtons = [muteBtnHome, muteBtnGameover, muteBtnPause];
+    
+    soundButtons.forEach(btn => {
+        if (btn) btn.style.display = soundEnabled ? "block" : "none";
+    });
+    
+    muteButtons.forEach(btn => {
+        if (btn) btn.style.display = soundEnabled ? "none" : "block";
+    });
 
-    if (soundEnabled) bgMusic.play();
-    else bgMusic.pause();
+    if (soundEnabled) {
+        bgMusic.play().catch(e => console.log("Audio play failed:", e));
+    } else {
+        bgMusic.pause();
+    }
 }
 
 function updateSoundDisplay() {
@@ -205,18 +240,19 @@ function updateSoundDisplay() {
 }
 
 function pauseGame() {
-
     if (!gameStarted || gameOver) return;
 
     isPaused = true;
     pauseOverlay.style.display = "flex";
     pauseBtn.style.display = "none";
     playBtn.style.display = "block";
-    soundBtnPause.style.display = "flex";
+    soundBtnPause.style.display = soundEnabled ? "block" : "none";
+    muteBtnPause.style.display = soundEnabled ? "none" : "block";
     bgMusic.pause();
     cancelAnimationFrame(animationFrameId);
     clearInterval(pipeInterval);
 }
+
 
 function resumeGame() {
     isPaused = false;
@@ -225,7 +261,6 @@ function resumeGame() {
     playBtn.style.display = "none";
     if (soundEnabled) bgMusic.play();
     pipeInterval = setDynamicPipeInterval();
-    cancelAnimationFrame(animationFrameId);
     requestAnimationFrame(update);
 }
 
