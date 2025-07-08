@@ -324,7 +324,7 @@ function handleGlobalTouch(e) {
 
   if (isCountdownActive) return
 
-  // Start game if not started yet
+  // Start game if not started yet (only on homepage)
   if (!gameStarted && !gameOver) {
     startGame()
     return
@@ -335,6 +335,9 @@ function handleGlobalTouch(e) {
     resumeGame()
     return
   }
+
+  // DO NOT restart game on any touch when game is over
+  // Only restart button should work
 }
 
 function handleContainerTouch(e) {
@@ -343,6 +346,9 @@ function handleContainerTouch(e) {
 
   // Don't handle if touching pause overlay
   if (e.target.closest(".pause-overlay")) return
+
+  // Don't handle if game is over
+  if (gameOver) return
 
   e.preventDefault()
   e.stopPropagation()
@@ -433,6 +439,8 @@ function startGame() {
   pauseBtn.style.display = "none"
   soundBtnHome.style.display = "none"
   muteBtnHome.style.display = "none"
+  soundBtnGameover.style.display = "none"
+  muteBtnGameover.style.display = "none"
 
   // Start countdown
   isCountdownActive = true
