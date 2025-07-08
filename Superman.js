@@ -212,23 +212,20 @@ function handleGameTouch(e) {
 function toggleSound() {
     soundEnabled = !soundEnabled;
     
-    // Update all sound controls at once
-    const soundButtons = [soundBtnHome, soundBtnGameover, soundBtnPause];
-    const muteButtons = [muteBtnHome, muteBtnGameover, muteBtnPause];
-    
-    soundButtons.forEach(btn => {
-        if (btn) btn.style.display = soundEnabled ? "block" : "none";
-    });
-    
-    muteButtons.forEach(btn => {
-        if (btn) btn.style.display = soundEnabled ? "none" : "block";
-    });
-
-    if (soundEnabled) {
-        bgMusic.play().catch(e => console.log("Audio play failed:", e));
-    } else {
-        bgMusic.pause();
+    // Update only relevant controls based on current screen
+    if (gameOver) {
+        soundBtnGameover.style.display = soundEnabled ? "block" : "none";
+        muteBtnGameover.style.display = soundEnabled ? "none" : "block";
+    } else if (isPaused) {
+        soundBtnPause.style.display = soundEnabled ? "block" : "none";
+        muteBtnPause.style.display = soundEnabled ? "none" : "block";
+    } else if (!gameStarted) {
+        soundBtnHome.style.display = soundEnabled ? "block" : "none";
+        muteBtnHome.style.display = soundEnabled ? "none" : "block";
     }
+
+    if (soundEnabled) bgMusic.play();
+    else bgMusic.pause();
 }
 
 function updateSoundDisplay() {
