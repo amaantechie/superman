@@ -1,808 +1,756 @@
-// Game constants - now responsive
-const boardWidth = 360
-const boardHeight = 640
-let context
-let uiContext
-const homepage = document.getElementById("homepage")
-let board = document.getElementById("board")
-let ui = document.getElementById("ui")
-const startBtn = document.getElementById("start-btn")
-const restartBtn = document.getElementById("restart-btn")
-const soundBtnPause = document.getElementById("sound-btn-pause")
-const muteBtnPause = document.getElementById("mute-btn-pause")
-const pauseOverlay = document.getElementById("pause-overlay")
-const resumeBtn = document.getElementById("resume-btn")
-const powerUpImg = new Image()
-const enemyImg = new Image()
-let shieldActive = false
-const shieldDuration = 5000 // 5 seconds
-let shieldEndTime = 0
-let powerUpArray = []
-let lastPowerUpSpawn = 0
-const powerUpSpawnInterval = 10000 // 10 seconds
-let enemyArray = []
-const enemySpawnInterval = 4000 // 4 seconds
-let lastEnemySpawn = 0 // Enemy parameters
-const baseEnemySpeed = -4
-const enemySpeedIncrease = -0.5 // Speed increase per level
-const maxEnemySpeed = -8 // Maximum enemy speed
-// Difficulty caps
-const MAX_DIFFICULTY_LEVEL = 5
-const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200 // How much faster pipes spawn per level
+// Game constants
+let boardWidth = window.innerWidth;
+let boardHeight = window.innerHeight;
 
-// Responsive scaling variables
-let scaleX = 1
-let scaleY = 1
-let gameWrapper
+let context;
+let uiContext;
+let homepage = document.getElementById("homepage");
+let board = document.getElementById("board");
+let ui = document.getElementById("ui");
+let startBtn = document.getElementById("start-btn");
+let restartBtn = document.getElementById("restart-btn");
+let soundBtnPause = document.getElementById("sound-btn-pause");
+let muteBtnPause = document.getElementById("mute-btn-pause");
+let pauseOverlay = document.getElementById("pause-overlay");
+let resumeBtn = document.getElementById("resume-btn");
+let powerUpImg = new Image();
+let enemyImg = new Image();
+let shieldActive = false;
+let shieldDuration = 5000; // 5 seconds
+let shieldEndTime = 0;
+let powerUpArray = [];
+let lastPowerUpSpawn = 0;
+let powerUpSpawnInterval = 10000; // 10 seconds
+let enemyArray = [];
+let enemySpawnInterval = 4000; // 4 seconds
+let lastEnemySpawn = 0;
+// Enemy parameters
+let baseEnemySpeed = -4;
+let enemySpeedIncrease = -0.5; // Speed increase per level
+let maxEnemySpeed = -8;        // Maximum enemy speed
+// Difficulty caps
+const MAX_DIFFICULTY_LEVEL = 5;
+const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200; // How much faster pipes spawn per level
+
 
 // Superman
-const SupermanWidth = 74.8
-const SupermanHeight = 32.4
-const SupermanX = boardWidth / 8
-const SupermanY = boardHeight / 2
-let SupermanImg
+let SupermanWidth = boardWidth * 0.2; // 20% width
+let SupermanHeight = SupermanWidth * 0.433; // same aspect ratio
 
-const Superman = {
-  x: SupermanX,
-  y: SupermanY,
-  width: SupermanWidth,
-  height: SupermanHeight,
-}
+let SupermanX = boardWidth / 8;
+let SupermanY = boardHeight / 2;
+let SupermanImg;
+
+let Superman = {
+    x: boardWidth / 8,
+    y: boardHeight / 2,
+    width: SupermanWidth,
+    height: SupermanHeight,
+};
+
 
 // Pipes
-let pipeArray = []
-const pipeWidth = 64
-const pipeHeight = 512
-const pipeX = boardWidth
-const pipeY = 0
+let pipeArray = [];
+let pipeWidth = boardWidth * 0.18;
+let pipeHeight = boardHeight * 0.8;
+
+let pipeX = boardWidth;
+let pipeY = 0;
 
 // Difficulty parameters
-const basePipeInterval = 1700
-const minPipeInterval = 900
-const maxPipeInterval = 1720
-const basePipeGap = boardHeight / 3.2
-const minPipeGap = 90
-const baseVelocityX = -2
-const maxVelocityX = -6
-const levelSpeedIncrease = -0.5
-const baseObstacleChance = 0.1
-const obstacleIncreasePerLevel = 0.05
+let basePipeInterval = 1700;
+let minPipeInterval = 900;
+let maxPipeInterval = 1720;
+let basePipeGap = boardHeight / 3.2;
+let minPipeGap = 90;
+let baseVelocityX = -2;
+let maxVelocityX = -6;
+let levelSpeedIncrease = -0.5;
+let baseObstacleChance = 0.1;
+let obstacleIncreasePerLevel = 0.05;
 
 // Images
-let topPipeImg
-let bottomPipeImg
-let newTopPipeImg
-let newBottomPipeImg
-let gameOverImg
-let yourScoreImg
-let highScoreImg
-let collisionImg
+let topPipeImg;
+let bottomPipeImg;
+let newTopPipeImg;
+let newBottomPipeImg;
+let gameOverImg;
+let yourScoreImg;
+let highScoreImg;
+let collisionImg;
 
 // Game variables
-let velocityX = baseVelocityX
-let velocityY = 0
-const gravity = 0.4
-let gameOver = false
-let score = 0
-let highScore = Number.parseInt(localStorage.getItem("supermanHighScore")) || 0
-let gameStarted = false
-let pipeInterval = null
-let animationFrameId = null
-let currentLevel = 0
-let lastLevelCheckpoint = 0
-let countdown = 3
-let isCountdownActive = false
-let lastPipeGap = { top: 0, bottom: 0 } // Stores the Y-range of the pipe gap
+let velocityX = baseVelocityX;
+let velocityY = 0;
+let gravity = 0.4;
+let gameOver = false;
+let score = 0;
+let highScore = parseInt(localStorage.getItem("supermanHighScore")) || 0;
+let gameStarted = false;
+let pipeInterval = null;
+let animationFrameId = null;
+let currentLevel = 0;
+let lastLevelCheckpoint = 0;
+let countdown = 3;
+let isCountdownActive = false;
 
 // Level animation
-let isLevelAnimating = false
-let levelAnimationStartTime = 0
-const levelAnimationDuration = 1000
+let isLevelAnimating = false;
+let levelAnimationStartTime = 0;
+const levelAnimationDuration = 1000;
 
 // Sound elements
-const bgMusic = new Audio("./sound/bg.mp3")
-const flySound = new Audio("./sound/fly.mp3")
-const hitSound = new Audio("./sound/hit.mp3")
-let soundEnabled = true
-let isPaused = false
+let bgMusic = new Audio('bg.mp3');
+let flySound = new Audio('fly.mp3');
+let hitSound = new Audio('hit.mp3');
+let soundEnabled = true;
+let isPaused = false;
 
 // UI elements
-const pauseBtn = document.getElementById("pause-btn")
-const playBtn = document.getElementById("play-btn")
-const soundBtnHome = document.getElementById("sound-btn-home")
-const muteBtnHome = document.getElementById("mute-btn-home")
-const soundBtnGameover = document.getElementById("sound-btn-gameover")
-const muteBtnGameover = document.getElementById("mute-btn-gameover")
+const pauseBtn = document.getElementById("pause-btn");
+const playBtn = document.getElementById("play-btn");
+const soundBtnHome = document.getElementById("sound-btn-home");
+const muteBtnHome = document.getElementById("mute-btn-home");
+const soundBtnGameover = document.getElementById("sound-btn-gameover");
+const muteBtnGameover = document.getElementById("mute-btn-gameover");
 
-// Responsive setup function
-function setupResponsiveCanvas() {
-  gameWrapper = document.querySelector(".game-wrapper")
-  const container = document.querySelector(".game-container")
 
-  // Get actual container dimensions
-  const containerWidth = container.clientWidth
-  const containerHeight = container.clientHeight
 
-  // Calculate optimal game dimensions maintaining aspect ratio
-  const targetAspectRatio = boardWidth / boardHeight // 360/640 = 0.5625
+window.onload = function () {
+    board = document.getElementById("board");
+    board.height = boardHeight;
+    board.width = boardWidth;
+    context = board.getContext("2d");
 
-  let gameWidth, gameHeight
+    let uiCanvas = document.getElementById("ui"); 
+    uiCanvas.height = boardHeight;
+    uiCanvas.width = boardWidth;
+    uiContext = uiCanvas.getContext("2d");
 
-  if (containerWidth / containerHeight > targetAspectRatio) {
-    // Container is wider than target ratio - fit to height
-    gameHeight = containerHeight
-    gameWidth = gameHeight * targetAspectRatio
-  } else {
-    // Container is taller than target ratio - fit to width
-    gameWidth = containerWidth
-    gameHeight = gameWidth / targetAspectRatio
-  }
+    resizeGame();
 
-  // Set canvas dimensions
-  board.width = boardWidth
-  board.height = boardHeight
-  ui.width = boardWidth
-  ui.height = boardHeight
+    // Load images
 
-  // Set display size
-  board.style.width = gameWidth + "px"
-  board.style.height = gameHeight + "px"
-  ui.style.width = gameWidth + "px"
-  ui.style.height = gameHeight + "px"
 
-  // Set wrapper size
-  gameWrapper.style.width = gameWidth + "px"
-  gameWrapper.style.height = gameHeight + "px"
+    powerUpImg.src = "./powerups.png";
+    enemyImg.src = "./enemy.png";
 
-  // Calculate scaling factors for touch coordinates
-  scaleX = boardWidth / gameWidth
-  scaleY = boardHeight / gameHeight
-}
+    SupermanImg = new Image();
+    SupermanImg.src = "./superman1.png";
 
-// Handle window resize
-function handleResize() {
-  setupResponsiveCanvas()
-}
+    topPipeImg = new Image();
+    topPipeImg.src = "./toppipe.png";
 
-window.onload = () => {
-  board = document.getElementById("board")
-  ui = document.getElementById("ui")
+    bottomPipeImg = new Image();
+    bottomPipeImg.src = "./bottompipe.png";
 
-  // Setup responsive canvas
-  setupResponsiveCanvas()
+    newTopPipeImg = new Image();
+    newTopPipeImg.src = "./pipe11.png";
 
-  context = board.getContext("2d")
-  uiContext = ui.getContext("2d")
+    newBottomPipeImg = new Image();
+    newBottomPipeImg.src = "./pipe1.png";
 
-  // Load images
-  powerUpImg.src = "./images/powerups.png"
-  enemyImg.src = "./images/enemy.png"
+    gameOverImg = new Image();
+    gameOverImg.src = "./gameover.png";
 
-  SupermanImg = new Image()
-  SupermanImg.src = "./images/superman1.png"
+    highScoreImg = new Image();
+    highScoreImg.src = "./highscore.png";
 
-  topPipeImg = new Image()
-  topPipeImg.src = "./images/toppipe.png"
+    collisionImg = new Image();
+    collisionImg.src = "./collision.png";
 
-  bottomPipeImg = new Image()
-  bottomPipeImg.src = "./images/bottompipe.png"
+    // Initialize sound
+    bgMusic.loop = true;
+    updateSoundDisplay();
 
-  newTopPipeImg = new Image()
-  newTopPipeImg.src = "./images/pipe11.png"
+    // Event listeners
+    startBtn.addEventListener("click", startGame);
+    restartBtn.addEventListener("click", restartGame);
+    document.addEventListener("keydown", handleKeyPress);
+    document.addEventListener("touchstart", handleTouchStart);
+    pauseBtn.addEventListener("click", pauseGame);
+    playBtn.addEventListener("click", resumeGame);
+    soundBtnHome.addEventListener("click", toggleSound);
+    muteBtnHome.addEventListener("click", toggleSound);
+    soundBtnGameover.addEventListener("click", toggleSound);
+    muteBtnGameover.addEventListener("click", toggleSound);
+    resumeBtn.addEventListener("click", resumeGame);
+    soundBtnPause.addEventListener("click", toggleSound);
+    muteBtnPause.addEventListener("click", toggleSound);
+    window.addEventListener("resize", resizeGame);
 
-  newBottomPipeImg = new Image()
-  newBottomPipeImg.src = "./images/pipe1.png"
+    showHomepage();
+};
 
-  gameOverImg = new Image()
-  gameOverImg.src = "./images/gameover.png"
+function resizeGame() {
+    boardWidth = window.innerWidth;
+    boardHeight = window.innerHeight;
 
-  highScoreImg = new Image()
-  highScoreImg.src = "./images/highscore.png"
+    board.width = boardWidth;
+    board.height = boardHeight;
 
-  collisionImg = new Image()
-  collisionImg.src = "./images/collision.png"
+    ui.width = boardWidth;
+    ui.height = boardHeight;
 
-  // Initialize sound
-  bgMusic.loop = true
-  updateSoundDisplay()
-
-  // Event listeners
-  startBtn.addEventListener("click", startGame)
-  restartBtn.addEventListener("click", restartGame)
-  document.addEventListener("keydown", handleKeyPress)
-  pauseBtn.addEventListener("click", pauseGame)
-  playBtn.addEventListener("click", resumeGame)
-  soundBtnHome.addEventListener("click", toggleSound)
-  muteBtnHome.addEventListener("click", toggleSound)
-  soundBtnGameover.addEventListener("click", toggleSound)
-  muteBtnGameover.addEventListener("click", toggleSound)
-  resumeBtn.addEventListener("click", resumeGame)
-  soundBtnPause.addEventListener("click", toggleSound)
-  muteBtnPause.addEventListener("click", toggleSound)
-
-  // Enhanced touch handling
-  document.addEventListener("touchstart", handleTouch, { passive: false })
-  document.addEventListener("touchmove", preventScroll, { passive: false })
-  document.addEventListener("touchend", preventScroll, { passive: false })
-
-  // Window resize handler
-  window.addEventListener("resize", handleResize)
-  window.addEventListener("orientationchange", () => {
-    setTimeout(handleResize, 100) // Delay to ensure orientation change is complete
-  })
-
-  showHomepage()
-}
-
-// Prevent scrolling on mobile
-function preventScroll(e) {
-  e.preventDefault()
+    // Recalculate positions/sizes
+    Superman.x = boardWidth / 8;
+    Superman.width = boardWidth * 0.2;
+    Superman.height = Superman.width * 0.433;
 }
 
 function toggleSound() {
-  soundEnabled = !soundEnabled
+    soundEnabled = !soundEnabled;
+    
+    // Update only relevant controls based on current screen
+    if (gameOver) {
+        soundBtnGameover.style.display = soundEnabled ? "block" : "none";
+        muteBtnGameover.style.display = soundEnabled ? "none" : "block";
+    } else if (isPaused) {
+        soundBtnPause.style.display = soundEnabled ? "block" : "none";
+        muteBtnPause.style.display = soundEnabled ? "none" : "block";
+    } else if (!gameStarted) {
+        soundBtnHome.style.display = soundEnabled ? "block" : "none";
+        muteBtnHome.style.display = soundEnabled ? "none" : "block";
+    }
 
-  // Update only relevant controls based on current screen
-  if (gameOver) {
-    soundBtnGameover.style.display = soundEnabled ? "block" : "none"
-    muteBtnGameover.style.display = soundEnabled ? "none" : "block"
-  } else if (isPaused) {
-    soundBtnPause.style.display = soundEnabled ? "block" : "none"
-    muteBtnPause.style.display = soundEnabled ? "none" : "block"
-  } else if (!gameStarted) {
-    soundBtnHome.style.display = soundEnabled ? "block" : "none"
-    muteBtnHome.style.display = soundEnabled ? "none" : "block"
-  }
-
-  if (soundEnabled) bgMusic.play()
-  else bgMusic.pause()
+    if (soundEnabled) bgMusic.play();
+    else bgMusic.pause();
 }
 
 function updateSoundDisplay() {
-  const showSound = soundEnabled
-  soundBtnHome.style.display = showSound ? "block" : "none"
-  muteBtnHome.style.display = showSound ? "none" : "block"
-  soundBtnGameover.style.display = showSound ? "block" : "none"
-  muteBtnGameover.style.display = showSound ? "none" : "block"
+    const showSound = soundEnabled;
+    soundBtnHome.style.display = showSound ? "block" : "none";
+    muteBtnHome.style.display = showSound ? "none" : "block";
+    soundBtnGameover.style.display = showSound ? "block" : "none";
+    muteBtnGameover.style.display = showSound ? "none" : "block";
 }
 
 function pauseGame() {
-  if (!gameStarted || gameOver) return
 
-  isPaused = true
-  pauseOverlay.style.display = "flex"
-  pauseBtn.style.display = "none"
-  playBtn.style.display = "block"
-  soundBtnPause.style.display = "flex"
-  bgMusic.pause()
-  cancelAnimationFrame(animationFrameId)
-  clearInterval(pipeInterval)
+    if (!gameStarted || gameOver) return;
+
+    isPaused = true;
+    pauseOverlay.style.display = "flex";
+    pauseBtn.style.display = "none";
+    playBtn.style.display = "block";
+    soundBtnPause.style.display = "flex";
+    bgMusic.pause();
+    cancelAnimationFrame(animationFrameId);
+    clearInterval(pipeInterval);
 }
 
 function resumeGame() {
-  isPaused = false
-  pauseOverlay.style.display = "none"
-  pauseBtn.style.display = "block"
-  playBtn.style.display = "none"
-  if (soundEnabled) bgMusic.play()
-  pipeInterval = setDynamicPipeInterval()
-  cancelAnimationFrame(animationFrameId)
-  requestAnimationFrame(update)
+    isPaused = false;
+    pauseOverlay.style.display = "none";
+    pauseBtn.style.display = "block";
+    playBtn.style.display = "none";
+    if (soundEnabled) bgMusic.play();
+    pipeInterval = setDynamicPipeInterval();
+    cancelAnimationFrame(animationFrameId);
+    requestAnimationFrame(update);
 }
 
+
 function startGame() {
-  gameOver = false
-  gameStarted = true
-  score = 0
-  currentLevel = 0
-  lastLevelCheckpoint = 0
-  velocityX = baseVelocityX
-  velocityY = 0
-  Superman.y = SupermanY
-  pipeArray = []
-  isLevelAnimating = false
+    gameOver = false;
+    gameStarted = true;
+    score = 0;
+    currentLevel = 0;
+    lastLevelCheckpoint = 0;
+    velocityX = baseVelocityX;
+    velocityY = 0;
+    Superman.y = SupermanY;
+    pipeArray = [];
+    isLevelAnimating = false;
+    
 
-  // Hide/show elements
-  homepage.style.display = "none"
-  board.style.display = "block"
-  ui.style.display = "block"
-  startBtn.style.display = "none"
-  restartBtn.style.display = "none"
-  pauseBtn.style.display = "none"
-  soundBtnHome.style.display = "none"
-  muteBtnHome.style.display = "none"
+    // Hide/show elements
+    homepage.style.display = "none";
+    board.style.display = "block";
+    ui.style.display = "block";
+    startBtn.style.display = "none";
+    restartBtn.style.display = "none";
+    pauseBtn.style.display = "none";
+    soundBtnHome.style.display = "none";
+    muteBtnHome.style.display =  "none";
 
-  // Start countdown
-  isCountdownActive = true
-  countdown = 3
-  animateCountdown()
+    // Start countdown
+    isCountdownActive = true;
+    countdown = 3;
+    animateCountdown();
 }
 
 function animateCountdown() {
-  if (!isCountdownActive) return
+    if (!isCountdownActive) return;
 
-  // Clear canvases
-  context.clearRect(0, 0, board.width, board.height)
-  uiContext.clearRect(0, 0, board.width, board.height)
+    // Clear canvases
+    context.clearRect(0, 0, board.width, board.height);
+    uiContext.clearRect(0, 0, board.width, board.height);
+z
+    // Draw Superman
+    context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height);
 
-  // Draw Superman
-  context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
+    // Animate countdown number
+    const fontSize = 100 + (50 * (countdown - Math.floor(countdown)));
+    const alpha = 1 - (countdown - Math.floor(countdown));
+    
+    uiContext.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+    uiContext.font = `bold ${fontSize}px Arial`;
+    uiContext.textAlign = "center";
+    uiContext.fillText(Math.ceil(countdown).toString(), boardWidth/2, boardHeight/2);
 
-  // Animate countdown number - responsive font size
-  const baseFontSize = Math.min(boardWidth, boardHeight) * 0.15
-  const fontSize = baseFontSize + baseFontSize * 0.5 * (countdown - Math.floor(countdown))
-  const alpha = 1 - (countdown - Math.floor(countdown))
+    countdown -= 0.016; // Decrement by ~1/60th of a second
 
-  uiContext.fillStyle = `rgba(255, 215, 0, ${alpha})`
-  uiContext.font = `bold ${fontSize}px Arial`
-  uiContext.textAlign = "center"
-  uiContext.fillText(Math.ceil(countdown).toString(), boardWidth / 2, boardHeight / 2)
+    if (countdown <= 0) {
+        isCountdownActive = false;
+        gameStarted = true;
+        pauseBtn.style.display = "block";
 
-  countdown -= 0.016 // Decrement by ~1/60th of a second
-
-  if (countdown <= 0) {
-    isCountdownActive = false
-    gameStarted = true
-    pauseBtn.style.display = "block"
-
-    if (soundEnabled) bgMusic.play()
-    pipeInterval = setDynamicPipeInterval()
-    requestAnimationFrame(update)
-  } else {
-    requestAnimationFrame(animateCountdown)
-  }
+        if (soundEnabled) bgMusic.play();
+        pipeInterval = setDynamicPipeInterval();
+        requestAnimationFrame(update);
+    } else {
+        requestAnimationFrame(animateCountdown);
+    }
 }
 
 function update() {
-  if (!gameStarted || gameOver || isPaused || isCountdownActive) return
-  animationFrameId = requestAnimationFrame(update)
+    if (!gameStarted || gameOver || isPaused || isCountdownActive) return;
+    animationFrameId = requestAnimationFrame(update);
+    
 
-  context.clearRect(0, 0, board.width, board.height)
-  uiContext.clearRect(0, 0, board.width, board.height)
+    context.clearRect(0, 0, board.width, board.height);
+    uiContext.clearRect(0, 0, board.width, board.height);
 
-  currentLevel = Math.floor(score / 15)
-  if (currentLevel > lastLevelCheckpoint && !isLevelAnimating) {
-    isLevelAnimating = true
-    levelAnimationStartTime = Date.now()
-    updateDifficulty()
-  }
+    currentLevel = Math.floor(score / 10);
+    if (currentLevel > lastLevelCheckpoint && !isLevelAnimating) {
+        isLevelAnimating = true;
+        levelAnimationStartTime = Date.now();
+        updateDifficulty();
+    }
+   
 
-  // UI elements - responsive font sizes
-  uiContext.fillStyle = "rgba(0, 0, 0, 0.5)"
-  uiContext.fillRect(0, 0, boardWidth, Math.min(50, boardHeight * 0.08))
-  uiContext.fillStyle = "#FFD700"
+    // UI elements
+    uiContext.fillStyle = "rgba(0, 0, 0, 0.5)";
+    uiContext.fillRect(0, 0, boardWidth, 50);
+    uiContext.fillStyle = "#FFD700";
+    uiContext.font = "16px Arial";
+    uiContext.textAlign = "center";
+    uiContext.fillText(`HIGH: ${highScore}`, boardWidth / 2 - 140, 30);
+    uiContext.textAlign = "center";
+    uiContext.fillText(`LEVEL ${currentLevel}`, boardWidth / 2 , 30);
 
-  const uiFontSize = Math.min(16, boardWidth * 0.045)
-  uiContext.font = `${uiFontSize}px Arial`
-  uiContext.textAlign = "center"
-  uiContext.fillText(`HIGH: ${highScore}`, boardWidth / 2 - 140, 30)
-  uiContext.textAlign = "center"
-  uiContext.fillText(`LEVEL ${currentLevel}`, boardWidth / 2, 30)
+    // Superman physics
+    velocityY += gravity;
+    Superman.y = Math.max(Superman.y + velocityY, 0);
+    context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height);
 
-  // Superman physics
-  velocityY += gravity
-  Superman.y = Math.max(Superman.y + velocityY, 0)
-  context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
+    if (Superman.y > board.height) endGame();
 
-  if (Superman.y > board.height) endGame()
+    // Pipe handling
+    for (let i = 0; i < pipeArray.length; i++) {
+        let pipe = pipeArray[i];
+        pipe.x += velocityX;
+        context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height);
 
-  // Pipe handling
-  for (let i = 0; i < pipeArray.length; i++) {
-    const pipe = pipeArray[i]
-    pipe.x += velocityX
-    context.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height)
+        if (!pipe.passed && Superman.x > pipe.x + pipe.width) {
+            score += 0.5;
+            pipe.passed = true;
+        }
 
-    if (!pipe.passed && Superman.x > pipe.x + pipe.width) {
-      score += 0.5
-      pipe.passed = true
+        if (detectCollision(Superman, pipe)) {
+            // Draw collision image 1x the size of Superman, centered on Superman
+            let scale = 1;
+            let collisionW = Superman.width * scale;
+            let collisionH = Superman.height * scale;
+            let collisionX = Superman.x + (Superman.width - collisionW) / 2;
+            let collisionY = Superman.y + (Superman.height - collisionH) / 2;
+            context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH);
+            endGame(pipe);
+        }
+        
     }
 
-    if (detectCollision(Superman, pipe)) {
-      // Draw collision image 1x the size of Superman, centered on Superman
-      drawCollisionEffect(Superman.x, Superman.y, Superman.width, Superman.height)
-      endGame(pipe)
+    while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
+        pipeArray.shift();
     }
-  }
 
-  while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
-    pipeArray.shift()
-  }
+    if (currentLevel !== lastLevelCheckpoint) {
+        lastLevelCheckpoint = currentLevel;
+        if (pipeInterval) clearInterval(pipeInterval);
+        pipeInterval = setDynamicPipeInterval();
+        placePipes(); // ✅ Immediately spawn a pipe after level up
+    }
+    
 
-  if (currentLevel !== lastLevelCheckpoint) {
-    lastLevelCheckpoint = currentLevel
-    if (pipeInterval) clearInterval(pipeInterval)
-    pipeInterval = setDynamicPipeInterval()
-  }
+    // Score display
+    uiContext.fillStyle = "#FFD700";
+    let responsiveFontSize = Math.floor(boardWidth / 8); // adjust as needed
+uiContext.font = `bold ${responsiveFontSize}px 'Arial Black'`;
 
-  // Score display - responsive font size
-  uiContext.fillStyle = "#FFD700"
-  const scoreFontSize = Math.min(45, boardWidth * 0.125)
-  uiContext.font = `bold ${scoreFontSize}px Arial`
-  uiContext.textAlign = "center"
-  uiContext.fillText(Math.floor(score), boardWidth / 2, Math.min(100, boardHeight * 0.15))
+    uiContext.textAlign = "center";
+    uiContext.fillText(Math.floor(score), boardWidth / 2, 100);
 
-  // Level animation - responsive font size
-  if (isLevelAnimating) {
-    const elapsed = Date.now() - levelAnimationStartTime
-    const progress = Math.min(elapsed / levelAnimationDuration, 1)
-    uiContext.save()
-    uiContext.textAlign = "center"
-    uiContext.fillStyle = `rgba(255, 215, 0, ${1 - progress})`
-    const levelFontSize = Math.min(40, boardWidth * 0.11) + Math.min(20, boardWidth * 0.055) * (1 - progress)
-    uiContext.font = `bold ${levelFontSize}px Arial`
-    uiContext.fillText(`LEVEL ${currentLevel}`, boardWidth / 2, boardHeight / 2)
-    uiContext.restore()
-    if (progress >= 1) isLevelAnimating = false
-  }
+    // Level animation
+    if (isLevelAnimating) {
+        const elapsed = Date.now() - levelAnimationStartTime;
+        const progress = Math.min(elapsed / levelAnimationDuration, 1);
+        uiContext.save();
+        uiContext.textAlign = "center";
+        uiContext.fillStyle = `rgba(255, 215, 0, ${1 - progress})`;
+        uiContext.font = `bold ${40 + (20 * (1 - progress))}px Arial`;
+        uiContext.fillText(`LEVEL ${currentLevel}`, boardWidth / 2, boardHeight / 2);
+        uiContext.restore();
+        if (progress >= 1) isLevelAnimating = false;
+    }
 
-  // Handle shield
-  if (shieldActive && Date.now() > shieldEndTime) {
-    shieldActive = false
-  }
 
-  // Draw shield if active - responsive shield with flashing warning
-  if (shieldActive) {
-    const timeLeft = shieldEndTime - Date.now()
-    const isFlashing = timeLeft < 1000 && Math.floor(Date.now() / 100) % 2 === 0
+    // Handle shield
+    if (shieldActive && Date.now() > shieldEndTime) {
+        shieldActive = false;
+    }
 
-    const shieldSize = Math.min(50, Math.max(Superman.width, Superman.height) * 1.3)
+    // Draw shield if active
+// Handle shield with flashing warning
+if (shieldActive) {
+    const timeLeft = shieldEndTime - Date.now();
+    const isFlashing = timeLeft < 1000 && Math.floor(Date.now() / 100) % 2 === 0;
+
+    const shieldSize = 50;
 
     if (!isFlashing) {
-      context.drawImage(
-        powerUpImg,
-        Superman.x - (shieldSize - Superman.width) / 2,
-        Superman.y - (shieldSize - Superman.height) / 2,
-        shieldSize,
-        shieldSize,
-      )
+        context.drawImage(powerUpImg,
+            Superman.x - (shieldSize - Superman.width) / 2,
+            Superman.y - (shieldSize - Superman.height) / 2,
+            shieldSize,
+            shieldSize
+        );
     } else {
-      // Optional flash effect using lower opacity
-      context.globalAlpha = 0.5
-      context.drawImage(
-        powerUpImg,
-        Superman.x - (shieldSize - Superman.width) / 2,
-        Superman.y - (shieldSize - Superman.height) / 2,
-        shieldSize,
-        shieldSize,
-      )
-      context.globalAlpha = 1.0 // Reset transparency
+        // Optional flash effect using lower opacity
+        context.globalAlpha = 0.5;
+        context.drawImage(powerUpImg,
+            Superman.x - (shieldSize - Superman.width) / 2,
+            Superman.y - (shieldSize - Superman.height) / 2,
+            shieldSize,
+            shieldSize
+        );
+        context.globalAlpha = 1.0; // Reset transparency
     }
 
     // Auto-disable shield
     if (timeLeft <= 0) {
-      shieldActive = false
+        shieldActive = false;
     }
-  }
+}
 
-  // Handle powerups
-  for (let i = powerUpArray.length - 1; i >= 0; i--) {
-    const p = powerUpArray[i]
-    p.x += velocityX
-    context.drawImage(p.img, p.x, p.y, p.width, p.height)
 
-    if (detectCollision(Superman, p)) {
-      shieldActive = true
-      shieldEndTime = Date.now() + shieldDuration
-      powerUpArray.splice(i, 1)
-    }
-
-    if (p.x < -p.width) powerUpArray.splice(i, 1)
-  }
-
-  // Handle enemies
-  for (let i = enemyArray.length - 1; i >= 0; i--) {
-    const e = enemyArray[i]
-    e.x += e.speed
-    context.drawImage(e.img, e.x, e.y, e.width, e.height)
-
-    if (!shieldActive && detectCollision(Superman, e)) {
-      // Draw collision image 1x the size of Superman, centered on Superman
-      drawCollisionEffect(Superman.x, Superman.y, Superman.width, Superman.height)
-      endGame()
+    // Handle powerups
+    for (let i = powerUpArray.length - 1; i >= 0; i--) {
+        let p = powerUpArray[i];
+        p.x += velocityX;
+        context.drawImage(p.img, p.x, p.y, p.width, p.height);
+        
+        if (detectCollision(Superman, p)) {
+            shieldActive = true;
+            shieldEndTime = Date.now() + shieldDuration;
+            powerUpArray.splice(i, 1);
+        }
+        
+        if (p.x < -p.width) powerUpArray.splice(i, 1);
     }
 
-    if (e.x < -e.width) enemyArray.splice(i, 1)
-  }
+    // Handle enemies
+    for (let i = enemyArray.length - 1; i >= 0; i--) {
+        let e = enemyArray[i];
+        e.x += e.speed ;
+        context.drawImage(e.img, e.x, e.y, e.width, e.height);
+        
+        if (!shieldActive && detectCollision(Superman, e)) {
+            // Draw collision image 1x the size of Superman, centered on Superman
+            let scale = 1;
+            let collisionW = Superman.width * scale;
+            let collisionH = Superman.height * scale;
+            let collisionX = Superman.x + (Superman.width - collisionW) / 2;
+            let collisionY = Superman.y + (Superman.height - collisionH) / 2;
+            context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH);
+            endGame();
+        }
+        
+        
+        
+        if (e.x < -e.width) enemyArray.splice(i, 1);
+    }
 
-  const now = Date.now()
+    // Spawn new powerups
+    if (Date.now() - lastPowerUpSpawn > powerUpSpawnInterval) {
+        spawnPowerUp();
+        lastPowerUpSpawn = Date.now();
+    }
 
-  if (now - lastPowerUpSpawn > powerUpSpawnInterval) {
-    spawnPowerUp()
-    lastPowerUpSpawn = now
-  }
-
-  if (now - lastEnemySpawn > enemySpawnInterval) {
-    spawnEnemy()
-    lastEnemySpawn = now
-  }
+    // Spawn new enemies
+    if (Date.now() - lastEnemySpawn > enemySpawnInterval) {
+        spawnEnemy();
+        lastEnemySpawn = Date.now();
+    }
 }
 
 function updateDifficulty() {
-  // Cap level at MAX_DIFFICULTY_LEVEL for speed calculations
-  const effectiveLevel = Math.min(currentLevel, MAX_DIFFICULTY_LEVEL)
-  velocityX = baseVelocityX + levelSpeedIncrease * effectiveLevel
-  velocityX = Math.max(maxVelocityX, velocityX)
+    // Cap level at MAX_DIFFICULTY_LEVEL for speed calculations
+    const effectiveLevel = Math.min(currentLevel, MAX_DIFFICULTY_LEVEL);
+    velocityX = baseVelocityX + (levelSpeedIncrease * effectiveLevel);
+    velocityX = Math.max(maxVelocityX, velocityX);
 }
 
 function placePipes() {
-  if (gameOver || !gameStarted) return
-  const currentGap = basePipeGap
-  const minPipeY = -pipeHeight + 50 // Original minimum Y position
-  const maxPipeY = 0 - currentGap - 150 // Original maximum Y position
-  const randomPipeY = Math.random() * (maxPipeY - minPipeY) + minPipeY
+    if (gameOver || !gameStarted) return;
 
-  const gapTopY = randomPipeY + pipeHeight
-  const gapBottomY = gapTopY + basePipeGap
-  lastPipeGap = { top: gapTopY, bottom: gapBottomY } // Save the current gap
+    // Avoid placing pipes too close to each other
+    if (pipeArray.length > 0) {
+        let lastPipe = pipeArray[pipeArray.length - 1];
+        if (lastPipe.x > boardWidth - 150) return; // Adjust spacing here
+    }
 
-  let obstacleChance = baseObstacleChance + currentLevel * obstacleIncreasePerLevel
-  obstacleChance = Math.min(obstacleChance, 0.75)
+    const currentGap = basePipeGap;
+    let minPipeY = -pipeHeight + 50;
+    let maxPipeY = 0 - currentGap - 150;
+    let randomPipeY = Math.random() * (maxPipeY - minPipeY) + minPipeY;
 
-  // Restore original pipe type logic
-  const topPipeType = Math.random() < obstacleChance ? "obstacle" : "normal"
-  const bottomPipeType = Math.random() < obstacleChance ? "obstacle" : "normal"
+    let obstacleChance = baseObstacleChance + currentLevel * obstacleIncreasePerLevel;
+    obstacleChance = Math.min(obstacleChance, 0.75);
 
-  const topImg = topPipeType === "obstacle" ? newTopPipeImg : topPipeImg
-  const bottomImg = bottomPipeType === "obstacle" ? newBottomPipeImg : bottomPipeImg
+    let topPipeType = Math.random() < obstacleChance ? "obstacle" : "normal";
+    let bottomPipeType = Math.random() < obstacleChance ? "obstacle" : "normal";
 
-  pipeArray.push({
-    img: topImg,
-    x: pipeX,
-    y: randomPipeY,
-    width: pipeWidth,
-    height: pipeHeight,
-    passed: false,
-  })
+    let topImg = topPipeType === "obstacle" ? newTopPipeImg : topPipeImg;
+    let bottomImg = bottomPipeType === "obstacle" ? newBottomPipeImg : bottomPipeImg;
 
-  pipeArray.push({
-    img: bottomImg,
-    x: pipeX,
-    y: randomPipeY + pipeHeight + currentGap,
-    width: pipeWidth,
-    height: pipeHeight,
-    passed: false,
-  })
+    pipeArray.push({
+        img: topImg,
+        x: pipeX,
+        y: randomPipeY,
+        width: pipeWidth,
+        height: pipeHeight,
+        passed: false,
+    });
+
+    pipeArray.push({
+        img: bottomImg,
+        x: pipeX,
+        y: randomPipeY + pipeHeight + currentGap,
+        width: pipeWidth,
+        height: pipeHeight,
+        passed: false,
+    });
 }
 
+
 function setDynamicPipeInterval() {
-  // Cap level at MAX_DIFFICULTY_LEVEL for interval calculation
-  const effectiveLevel = Math.min(currentLevel, MAX_DIFFICULTY_LEVEL)
-
-  // Calculate interval with capped level
-  let interval = basePipeInterval - effectiveLevel * PIPE_INTERVAL_REDUCTION_PER_LEVEL
-
-  // Ensure minimum interval
-  interval = Math.max(interval, minPipeInterval)
-
-  return setInterval(placePipes, interval)
+    // Cap level at MAX_DIFFICULTY_LEVEL for interval calculation
+    const effectiveLevel = Math.min(currentLevel, MAX_DIFFICULTY_LEVEL);
+    
+    // Calculate interval with capped level
+    let interval = basePipeInterval - (effectiveLevel * PIPE_INTERVAL_REDUCTION_PER_LEVEL);
+    
+    // Ensure minimum interval
+    interval = Math.max(interval, minPipeInterval);
+    
+    return setInterval(placePipes, interval);
 }
 
 function handleKeyPress(e) {
-  if (e.code === "KeyM") toggleSound()
-  if (isCountdownActive) return
-  if (e.code === "KeyP" && !gameOver) {
-    if (isPaused) resumeGame()
-    else pauseGame()
-  }
-  if (!gameStarted && !gameOver && (e.code === "Space" || e.code === "ArrowUp")) {
-    startGame()
-    return
-  }
-
-  if (gameStarted && !gameOver && (e.code === "Space" || e.code === "ArrowUp")) {
-    velocityY = -6
-    if (soundEnabled) {
-      flySound.currentTime = 0
-      flySound.play()
+    
+    if (e.code === "KeyM") toggleSound();
+    if (isCountdownActive) return;
+    if (e.code === "KeyP" && !gameOver) {
+        if (isPaused) resumeGame();
+        else pauseGame();
     }
-  }
+    if (!gameStarted && !gameOver && (e.code === "Space" || e.code === "ArrowUp")) {
+        startGame();
+        return;
+    }
 
-  if (gameOver && e.code === "Enter") restartGame()
+    if (gameStarted && !gameOver && (e.code === "Space" || e.code === "ArrowUp")) {
+        velocityY = -6;
+        if (soundEnabled) {
+            flySound.currentTime = 0;
+            flySound.play();
+        }
+    }
+
+    if (gameOver && e.code === "Enter") restartGame();
 }
 
-function handleTouch(e) {
-  e.preventDefault() // prevent scrolling on mobile
+function handleTouchStart(e) {
+    e.preventDefault(); // Prevents accidental scrolling or zooming
 
-  if (isCountdownActive) return
+    if (isCountdownActive) return;
 
-  // Start game if not started yet
-  if (!gameStarted && !gameOver) {
-    startGame()
-    return
-  }
-
-  // If game is over, restart
-  if (gameOver) {
-    restartGame()
-    return
-  }
-
-  // Fly action
-  if (gameStarted && !gameOver && !isPaused) {
-    velocityY = -6
-    if (soundEnabled) {
-      flySound.currentTime = 0
-      flySound.play()
+    if (!gameStarted && !gameOver) {
+        startGame();
+        return;
     }
-  }
 
-  // If game is paused, resume
-  if (isPaused) {
-    resumeGame()
-  }
+    if (gameStarted && !gameOver) {
+        velocityY = -6;
+        if (soundEnabled) {
+            flySound.currentTime = 0;
+            flySound.play();
+        }
+    }
+
+    if (gameOver) restartGame();
 }
 
 function restartGame() {
-  if (pipeInterval) {
-    clearInterval(pipeInterval)
-    pipeInterval = null
-  }
+    if (pipeInterval) {
+        clearInterval(pipeInterval);
+        pipeInterval = null;
+    }
 
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId)
-  }
+    gameOver = false;
+    gameStarted = false;
+    score = 0;
+    currentLevel = 0;
+    lastLevelCheckpoint = 0;
+    velocityX = baseVelocityX;
+    velocityY = 0;
+    Superman.y = SupermanY;
+    pipeArray = [];
+    isLevelAnimating = false;
+    shieldActive = false;
+    powerUpArray = [];
+    enemyArray = [];
 
-  gameOver = false
-  gameStarted = false
-  score = 0
-  currentLevel = 0
-  lastLevelCheckpoint = 0
-  velocityX = baseVelocityX
-  velocityY = 0
-  Superman.y = SupermanY
-  pipeArray = []
-  isLevelAnimating = false
-  shieldActive = false
-  powerUpArray = []
-  enemyArray = []
+    context.clearRect(0, 0, board.width, board.height);
+    uiContext.clearRect(0, 0, board.width, board.height);
 
-  context.clearRect(0, 0, board.width, board.height)
-  uiContext.clearRect(0, 0, board.width, board.height)
-
-  if (soundEnabled) bgMusic.play()
-  showHomepage()
+    if (soundEnabled) bgMusic.play();
+    showHomepage();
+    powerUpArray = [];
+    enemyArray = [];
+    document.getElementById("powerup-count").textContent = "Double Jumps: 0";
 }
 
 function endGame() {
-  gameOver = true
+    gameOver = true;
+    // highScore = Math.max(highScore, Math.floor(score));
 
-  if (score > highScore) {
-    highScore = score
-    localStorage.setItem("supermanHighScore", highScore)
-  }
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("supermanHighScore", highScore);
+    }
 
-  // Hide the pause button after the game ends
-  pauseBtn.style.display = "none" // Hide the pause button
 
-  // Keep board visible for background
-  board.style.display = "block" // Changed from "none"
-  homepage.style.display = "none"
+    // Hide the pause button after the game ends
+    pauseBtn.style.display = "none";  // Hide the pause button
 
-  // Show UI canvas and game over elements
-  ui.style.display = "block"
-  restartBtn.style.display = "block"
+    // Keep board visible for background
+    board.style.display = "block";  // Changed from "none"
+    homepage.style.display = "none";
+    
+    // Show UI canvas and game over elements
+    ui.style.display = "block";
+    restartBtn.style.display = "block";
+    
+    // Clear and redraw UI
+    uiContext.clearRect(0, 0, board.width, board.height);
+    
+    // Draw semi-transparent overlay
+    uiContext.fillStyle = "rgba(0, 0, 0, 0.5)";  // Reduced opacity to 50%
+    uiContext.fillRect(0, 0, boardWidth, boardHeight);
+    
+    const centerX = boardWidth / 2;
+    
+    // Game Over Image
+    uiContext.drawImage(gameOverImg, centerX - 225, 95, 450, 200);
+    
+    // Scores
+    uiContext.fillStyle = "#FFD700";
+    uiContext.font = "bold 45px 'Arial Black'";
+    uiContext.textAlign = "center";
+    uiContext.fillText(Math.floor(score), centerX, 100);
+    
+    // High Score
+    uiContext.drawImage(highScoreImg, centerX - 110, 280, 150, 80);
+    uiContext.fillText(highScore, centerX + 75, 330);
 
-  // Clear and redraw UI
-  uiContext.clearRect(0, 0, board.width, board.height)
+    // Sound controls
+    soundBtnGameover.style.display = soundEnabled ? "block" : "none";
+    muteBtnGameover.style.display = soundEnabled ? "none" : "block";
 
-  // Draw semi-transparent overlay
-  uiContext.fillStyle = "rgba(0, 0, 0, 0.5)" // Reduced opacity to 50%
-  uiContext.fillRect(0, 0, boardWidth, boardHeight)
-
-  const centerX = boardWidth / 2
-
-  // Game Over Image - responsive sizing
-  const gameOverWidth = Math.min(450, boardWidth * 0.9)
-  const gameOverHeight = Math.min(200, boardHeight * 0.25)
-  uiContext.drawImage(
-    gameOverImg,
-    centerX - gameOverWidth / 2,
-    Math.min(95, boardHeight * 0.15),
-    gameOverWidth,
-    gameOverHeight,
-  )
-
-  // Scores - responsive font size
-  uiContext.fillStyle = "#FFD700"
-  const scoreFontSize = Math.min(45, boardWidth * 0.125)
-  uiContext.font = `bold ${scoreFontSize}px Arial`
-  uiContext.textAlign = "center"
-  uiContext.fillText(Math.floor(score), centerX, Math.min(100, boardHeight * 0.15))
-
-  // High Score - responsive sizing
-  const highScoreWidth = Math.min(150, boardWidth * 0.4)
-  const highScoreHeight = Math.min(80, boardHeight * 0.125)
-  const highScoreY = Math.min(280, boardHeight * 0.44)
-  uiContext.drawImage(highScoreImg, centerX - highScoreWidth / 2, highScoreY, highScoreWidth, highScoreHeight)
-  uiContext.fillText(highScore, centerX + highScoreWidth / 4, highScoreY + highScoreHeight - 10)
-
-  // Sound controls
-  soundBtnGameover.style.display = soundEnabled ? "block" : "none"
-  muteBtnGameover.style.display = soundEnabled ? "none" : "block"
-
-  // Stop game elements
-  if (pipeInterval) clearInterval(pipeInterval)
-  bgMusic.pause()
-
-  if (soundEnabled) {
-    hitSound.currentTime = 0
-    hitSound.play()
-  }
+    // Stop game elements
+    if (pipeInterval) clearInterval(pipeInterval);
+    bgMusic.pause();
+    
+    if (soundEnabled) {
+        hitSound.currentTime = 0;
+        hitSound.play();
+    }
+    document.getElementById("powerup-count").style.display = "none";
 }
 
 // New helper functions
 function spawnPowerUp() {
-  const powerUpSize = Math.min(40, boardWidth * 0.11)
-  powerUpArray.push({
-    img: powerUpImg,
-    x: boardWidth,
-    y: Math.random() * (boardHeight - powerUpSize),
-    width: powerUpSize,
-    height: powerUpSize,
-  })
+    powerUpArray.push({
+        img: powerUpImg,
+        x: boardWidth,
+        y: Math.random() * (boardHeight - 40),
+        width: boardWidth * 0.1,
+height: boardWidth * 0.1,
+
+    });
 }
 
 function spawnEnemy() {
-  const enemyHeight = Math.min(40, boardHeight * 0.0625)
-  const enemyWidth = Math.min(60, boardWidth * 0.167)
-  let y
-  let tries = 0
+    let speed = baseEnemySpeed + (enemySpeedIncrease * currentLevel);
+    speed = Math.max(maxEnemySpeed, speed); // Cap at maximum speed
+    speed += (Math.random() - 0.5); // Add random variation
 
-  // Retry logic to avoid spawning in the pipe gap
-  do {
-    y = Math.random() * (boardHeight - enemyHeight)
-    tries++
-  } while (lastPipeGap && y + enemyHeight > lastPipeGap.top && y < lastPipeGap.bottom && tries < 10)
+    enemyArray.push({
+        img: enemyImg,
+        x: boardWidth,
+        y: Math.random() * (boardHeight - 60),
+        width: boardWidth * 0.1,
+height: boardWidth * 0.1,
 
-  let speed = baseEnemySpeed + enemySpeedIncrease * currentLevel
-  speed = Math.max(maxEnemySpeed, speed)
-  speed += Math.random() - 0.5 // Small random variation
-
-  enemyArray.push({
-    img: enemyImg,
-    x: boardWidth,
-    y: y,
-    width: enemyWidth,
-    height: enemyHeight,
-    speed: speed,
-  })
-}
+        speed: speed
+    });
+}   
 
 // Modified collision detection
 function detectCollision(a, b) {
-  if (shieldActive) return false // No collisions when shield is active
-
-  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
-}
-
-function drawCollisionEffect(x, y, width, height) {
-  const scale = 1
-  const collisionW = width * scale
-  const collisionH = height * scale
-  const collisionX = x + (width - collisionW) / 2
-  const collisionY = y + (height - collisionH) / 2
-  context.drawImage(collisionImg, collisionX, collisionY, collisionW, collisionH)
-}
+    if (shieldActive) return false; // No collisions when shield is active
+    
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
+}   
 
 function showHomepage() {
-  // Reset all displays
-  homepage.style.display = "block"
-  board.style.display = "none"
-  ui.style.display = "none"
-  startBtn.style.display = "block"
-  restartBtn.style.display = "none"
-  pauseBtn.style.display = "none"
-  playBtn.style.display = "none"
-  soundBtnHome.style.display = soundEnabled ? "block" : "none"
-  muteBtnHome.style.display = soundEnabled ? "none" : "block"
-  soundBtnGameover.style.display = "none"
-  muteBtnGameover.style.display = "none"
+    // Reset all displays
+    homepage.style.display = "block";
+    board.style.display = "none";
+    ui.style.display = "none";
+    startBtn.style.display = "block";
+    restartBtn.style.display = "none";
+    pauseBtn.style.display = "none";
+    playBtn.style.display = "none";
+    soundBtnHome.style.display = soundEnabled ? "block" : "none";
+    muteBtnHome.style.display = soundEnabled ? "none" : "block";
+    soundBtnGameover.style.display = "none";
+    muteBtnGameover.style.display = "none";
+    
+    // Reset game state
+    gameOver = false;
+    gameStarted = false;
+    pipeArray = [];
+    score = 0;
+    Superman.y = SupermanY;
+    pauseOverlay.style.display = "none";
 
-  // Reset game state
-  gameOver = false
-  gameStarted = false
-  pipeArray = []
-  score = 0
-  Superman.y = SupermanY
-  pauseOverlay.style.display = "none"
-}
+}  
+
