@@ -7,11 +7,15 @@ const homepage = document.getElementById("homepage")
 let board = document.getElementById("board")
 const ui = document.getElementById("ui")
 const startBtn = document.getElementById("start-btn")
+const achievementsBtn = document.getElementById("achievements-btn")
 const restartBtn = document.getElementById("restart-btn")
 const soundBtnPause = document.getElementById("sound-btn-pause")
 const muteBtnPause = document.getElementById("mute-btn-pause")
 const pauseOverlay = document.getElementById("pause-overlay")
 const resumeBtn = document.getElementById("resume-btn")
+const achievementsOverlay = document.getElementById("achievements-overlay")
+const achievementNotification = document.getElementById("achievement-notification")
+const achievementText = document.getElementById("achievement-text")
 const powerUpImg = new Image()
 const enemyImg = new Image()
 let shieldActive = false
@@ -28,6 +32,59 @@ const enemySpeedIncrease = -0.5
 const maxEnemySpeed = -8
 const MAX_DIFFICULTY_LEVEL = 5
 const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200
+
+// Achievement System
+const achievements = {
+  firstFlight: {
+    id: "firstFlight",
+    title: "First Flight",
+    description: "Start your first game",
+    icon: "🚀",
+    unlocked: false,
+  },
+  scorer100: { id: "scorer100", title: "Century", description: "Score 100 points", icon: "💯", unlocked: false },
+  scorer500: { id: "scorer500", title: "High Flyer", description: "Score 500 points", icon: "⭐", unlocked: false },
+  scorer1000: { id: "scorer1000", title: "Sky Master", description: "Score 1000 points", icon: "🌟", unlocked: false },
+  scorer2000: { id: "scorer2000", title: "Legend", description: "Score 2000 points", icon: "👑", unlocked: false },
+  scorer5000: { id: "scorer5000", title: "Superman", description: "Score 5000 points", icon: "🦸", unlocked: false },
+  level5: { id: "level5", title: "Rising Hero", description: "Reach Level 5", icon: "🔥", unlocked: false },
+  level10: { id: "level10", title: "Experienced", description: "Reach Level 10", icon: "⚡", unlocked: false },
+  level15: { id: "level15", title: "Elite Flyer", description: "Reach Level 15", icon: "💎", unlocked: false },
+  level20: { id: "level20", title: "Unstoppable", description: "Reach Level 20", icon: "🏆", unlocked: false },
+  shieldMaster: {
+    id: "shieldMaster",
+    title: "Shield Master",
+    description: "Collect 10 shields",
+    icon: "🛡️",
+    unlocked: false,
+  },
+  survivor: { id: "survivor", title: "Survivor", description: "Survive for 60 seconds", icon: "⏰", unlocked: false },
+  speedDemon: {
+    id: "speedDemon",
+    title: "Speed Demon",
+    description: "Reach maximum speed",
+    icon: "💨",
+    unlocked: false,
+  },
+  perfectStart: {
+    id: "perfectStart",
+    title: "Perfect Start",
+    description: "Score 50 without collision",
+    icon: "✨",
+    unlocked: false,
+  },
+  comeback: { id: "comeback", title: "Comeback Kid", description: "Play 10 games", icon: "🔄", unlocked: false },
+  dedication: { id: "dedication", title: "Dedicated", description: "Play 50 games", icon: "🎯", unlocked: false },
+}
+
+let gameStats = {
+  gamesPlayed: 0,
+  totalScore: 0,
+  shieldsCollected: 0,
+  maxSurvivalTime: 0,
+  currentSurvivalTime: 0,
+  gameStartTime: 0,
+}
 
 // Touch handling variables
 let touchStartTime = 0
@@ -116,28 +173,139 @@ const muteBtnGameover = document.getElementById("mute-btn-gameover")
 // Mobile detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
+// Achievement Functions
+function loadAchievements() {
+  const saved = localStorage.getItem("supermanAchievements")
+  if (saved) {
+    const savedAchievements = JSON.parse(saved)
+    Object.keys(savedAchievements).forEach((key) => {
+      if (achievements[key]) {
+        achievements[key].unlocked = savedAchievements[key].unlocked
+      }
+    })
+  }
+
+  const savedStats = localStorage.getItem("supermanGameStats")
+  if (savedStats) {
+    gameStats = { ...gameStats, ...JSON.parse(savedStats) }
+  }
+}
+
+function saveAchievements() {
+  localStorage.setItem("supermanAchievements", JSON.stringify(achievements))
+  localStorage.setItem("supermanGameStats", JSON.stringify(gameStats))
+}
+
+function unlockAchievement(achievementId) {
+  if (achievements[achievementId] && !achievements[achievementId].unlocked) {
+    achievements[achievementId].unlocked = true
+    showAchievementNotification(achievements[achievementId])
+    saveAchievements()
+    return true
+  }
+  return false
+}
+
+function showAchievementNotification(achievement) {
+  achievementText.textContent = `🏆 ${achievement.title} Unlocked!`
+  achievementNotification.style.display = "block"
+
+  setTimeout(() => {
+    achievementNotification.style.display = "none"
+  }, 3000)
+}
+
+function checkAchievements() {
+  // Score-based achievements
+  if (score >= 100) unlockAchievement("scorer100")
+  if (score >= 500) unlockAchievement("scorer500")
+  if (score >= 1000) unlockAchievement("scorer1000")
+  if (score >= 2000) unlockAchievement("scorer2000")
+  if (score >= 5000) unlockAchievement("scorer5000")
+
+  // Level-based achievements
+  if (currentLevel >= 5) unlockAchievement("level5")
+  if (currentLevel >= 10) unlockAchievement("level10")
+  if (currentLevel >= 15) unlockAchievement("level15")
+  if (currentLevel >= 20) unlockAchievement("level20")
+
+  // Shield achievement
+  if (gameStats.shieldsCollected >= 10) unlockAchievement("shieldMaster")
+
+  // Survival time achievement
+  gameStats.currentSurvivalTime = Date.now() - gameStats.gameStartTime
+  if (gameStats.currentSurvivalTime >= 60000) unlockAchievement("survivor")
+
+  // Speed achievement
+  if (velocityX <= maxVelocityX) unlockAchievement("speedDemon")
+
+  // Perfect start achievement
+  if (score >= 50 && gameStats.currentSurvivalTime < 30000) unlockAchievement("perfectStart")
+
+  // Games played achievements
+  if (gameStats.gamesPlayed >= 10) unlockAchievement("comeback")
+  if (gameStats.gamesPlayed >= 50) unlockAchievement("dedication")
+}
+
+function renderAchievements() {
+  const grid = document.getElementById("achievements-grid")
+  grid.innerHTML = ""
+
+  Object.values(achievements).forEach((achievement) => {
+    const card = document.createElement("div")
+    card.className = `achievement-card ${achievement.unlocked ? "unlocked" : "locked"}`
+
+    card.innerHTML = `
+      <div class="achievement-icon">${achievement.icon}</div>
+      <div class="achievement-title">${achievement.title}</div>
+      <div class="achievement-description">${achievement.description}</div>
+    `
+
+    grid.appendChild(card)
+  })
+}
+
+function showAchievements() {
+  renderAchievements()
+  achievementsOverlay.style.display = "flex"
+}
+
+function closeAchievements() {
+  achievementsOverlay.style.display = "none"
+}
+
 // Responsive canvas scaling
 function updateCanvasSize() {
   const container = document.querySelector(".game-container")
-  const containerRect = container.getBoundingClientRect()
 
-  // Update canvas dimensions to match container
-  board.width = boardWidth
-  board.height = boardHeight
-  ui.width = boardWidth
-  ui.height = boardHeight
+  // Set canvas to full viewport dimensions
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
 
-  // Scale canvas if needed
-  const scaleX = containerRect.width / boardWidth
-  const scaleY = containerRect.height / boardHeight
-  const scale = Math.min(scaleX, scaleY)
+  // Update canvas dimensions to match viewport
+  board.width = viewportWidth
+  board.height = viewportHeight
+  ui.width = viewportWidth
+  ui.height = viewportHeight
 
-  if (scale !== 1) {
-    board.style.transform = `scale(${scale})`
-    ui.style.transform = `scale(${scale})`
-    board.style.transformOrigin = "top left"
-    ui.style.transformOrigin = "top left"
-  }
+  // Update board dimensions for game logic scaling
+  const scaleX = viewportWidth / boardWidth
+  const scaleY = viewportHeight / boardHeight
+
+  // Store the scale factors globally for game element positioning
+  window.gameScaleX = scaleX
+  window.gameScaleY = scaleY
+
+  // Apply CSS to ensure full coverage
+  board.style.width = "100vw"
+  board.style.height = "100vh"
+  board.style.transform = "none"
+  board.style.transformOrigin = "top left"
+
+  ui.style.width = "100vw"
+  ui.style.height = "100vh"
+  ui.style.transform = "none"
+  ui.style.transformOrigin = "top left"
 }
 
 window.onload = () => {
@@ -178,8 +346,9 @@ window.onload = () => {
   collisionImg = new Image()
   collisionImg.src = "./images/collision.png"
 
-  // Initialize sound
+  // Initialize sound and achievements
   bgMusic.loop = true
+  loadAchievements()
   updateSoundDisplay()
 
   // Setup event listeners
@@ -207,6 +376,7 @@ window.onload = () => {
 function setupEventListeners() {
   // Enhanced button setup with better touch handling
   setupButton(startBtn, startGame)
+  setupButton(achievementsBtn, showAchievements)
   setupButton(restartBtn, restartGame)
   setupButton(pauseBtn, pauseGame)
   setupButton(playBtn, resumeGame)
@@ -347,6 +517,9 @@ function handleContainerTouch(e) {
   // Don't handle if touching pause overlay
   if (e.target.closest(".pause-overlay")) return
 
+  // Don't handle if touching achievements overlay
+  if (e.target.closest(".achievements-overlay")) return
+
   // Don't handle if game is over
   if (gameOver) return
 
@@ -430,17 +603,27 @@ function startGame() {
   enemyArray = []
   shieldActive = false
 
+  // Update game stats
+  gameStats.gamesPlayed++
+  gameStats.gameStartTime = Date.now()
+  gameStats.currentSurvivalTime = 0
+
+  // Check first flight achievement
+  unlockAchievement("firstFlight")
+
   // Hide/show elements
   homepage.style.display = "none"
   board.style.display = "block"
   ui.style.display = "block"
   startBtn.style.display = "none"
+  achievementsBtn.style.display = "none"
   restartBtn.style.display = "none"
   pauseBtn.style.display = "none"
   soundBtnHome.style.display = "none"
   muteBtnHome.style.display = "none"
   soundBtnGameover.style.display = "none"
   muteBtnGameover.style.display = "none"
+  achievementsOverlay.style.display = "none"
 
   // Start countdown
   isCountdownActive = true
@@ -451,9 +634,17 @@ function startGame() {
 function animateCountdown() {
   if (!isCountdownActive) return
 
+  const scaleX = window.gameScaleX || 1
+  const scaleY = window.gameScaleY || 1
+
+  context.save()
+  context.scale(scaleX, scaleY)
+  uiContext.save()
+  uiContext.scale(scaleX, scaleY)
+
   // Clear canvases
-  context.clearRect(0, 0, board.width, board.height)
-  uiContext.clearRect(0, 0, board.width, board.height)
+  context.clearRect(0, 0, boardWidth, boardHeight)
+  uiContext.clearRect(0, 0, boardWidth, boardHeight)
 
   // Draw Superman
   context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
@@ -467,7 +658,10 @@ function animateCountdown() {
   uiContext.textAlign = "center"
   uiContext.fillText(Math.ceil(countdown).toString(), boardWidth / 2, boardHeight / 2)
 
-  countdown -= 0.016 // Decrement by ~1/60th of a second
+  countdown -= 0.016
+
+  context.restore()
+  uiContext.restore()
 
   if (countdown <= 0) {
     isCountdownActive = false
@@ -486,8 +680,17 @@ function update() {
   if (!gameStarted || gameOver || isPaused || isCountdownActive) return
   animationFrameId = requestAnimationFrame(update)
 
-  context.clearRect(0, 0, board.width, board.height)
-  uiContext.clearRect(0, 0, board.width, board.height)
+  // Scale context to match viewport
+  const scaleX = window.gameScaleX || 1
+  const scaleY = window.gameScaleY || 1
+
+  context.save()
+  context.scale(scaleX, scaleY)
+  uiContext.save()
+  uiContext.scale(scaleX, scaleY)
+
+  context.clearRect(0, 0, boardWidth, boardHeight)
+  uiContext.clearRect(0, 0, boardWidth, boardHeight)
 
   currentLevel = Math.floor(score / 15)
   if (currentLevel > lastLevelCheckpoint && !isLevelAnimating) {
@@ -495,6 +698,9 @@ function update() {
     levelAnimationStartTime = Date.now()
     updateDifficulty()
   }
+
+  // Check achievements
+  checkAchievements()
 
   // UI elements
   uiContext.fillStyle = "rgba(0, 0, 0, 0.5)"
@@ -605,6 +811,7 @@ function update() {
     if (detectCollision(Superman, p)) {
       shieldActive = true
       shieldEndTime = Date.now() + shieldDuration
+      gameStats.shieldsCollected++
       powerUpArray.splice(i, 1)
     }
 
@@ -636,6 +843,8 @@ function update() {
     spawnEnemy()
     lastEnemySpawn = now
   }
+  context.restore()
+  uiContext.restore()
 }
 
 function updateDifficulty() {
@@ -692,6 +901,8 @@ function setDynamicPipeInterval() {
 
 function handleKeyPress(e) {
   if (e.code === "KeyM") toggleSound()
+  if (e.code === "KeyA") showAchievements()
+  if (e.code === "Escape") closeAchievements()
   if (isCountdownActive) return
   if (e.code === "KeyP" && !gameOver) {
     if (isPaused) resumeGame()
@@ -723,6 +934,14 @@ function restartGame() {
     cancelAnimationFrame(animationFrameId)
   }
 
+  // Update survival time stats
+  if (gameStats.currentSurvivalTime > gameStats.maxSurvivalTime) {
+    gameStats.maxSurvivalTime = gameStats.currentSurvivalTime
+  }
+
+  gameStats.totalScore += score
+  saveAchievements()
+
   gameOver = false
   gameStarted = false
   score = 0
@@ -746,6 +965,18 @@ function restartGame() {
 
 function endGame() {
   gameOver = true
+
+  // Update survival time stats
+  gameStats.currentSurvivalTime = Date.now() - gameStats.gameStartTime
+  if (gameStats.currentSurvivalTime > gameStats.maxSurvivalTime) {
+    gameStats.maxSurvivalTime = gameStats.currentSurvivalTime
+  }
+
+  gameStats.totalScore += score
+
+  // Final achievement check
+  checkAchievements()
+  saveAchievements()
 
   if (score > highScore) {
     highScore = score
@@ -841,6 +1072,7 @@ function showHomepage() {
   board.style.display = "none"
   ui.style.display = "none"
   startBtn.style.display = "block"
+  achievementsBtn.style.display = "block"
   restartBtn.style.display = "none"
   pauseBtn.style.display = "none"
   playBtn.style.display = "none"
@@ -848,6 +1080,7 @@ function showHomepage() {
   muteBtnHome.style.display = soundEnabled ? "none" : "block"
   soundBtnGameover.style.display = "none"
   muteBtnGameover.style.display = "none"
+  achievementsOverlay.style.display = "none"
 
   gameOver = false
   gameStarted = false
