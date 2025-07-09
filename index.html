@@ -24,9 +24,12 @@
             position: fixed;
             width: 100vw;
             height: 100vh;
-            display: block;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
+        /* Mobile-first responsive design */
         .game-container {
             position: relative;
             width: 100vw;
@@ -36,18 +39,49 @@
             touch-action: none;
         }
 
-        /* Remove all the existing media queries for .game-container and replace with: */
-        @media (orientation: portrait) {
+        /* Desktop fixed layout */
+        @media (min-width: 769px) and (pointer: fine) {
+            body {
+                background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
             .game-container {
-                width: 100vw;
-                height: 100vh;
+                width: 400px;
+                height: 700px;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+                border: 2px solid #333;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .game-container::before {
+                content: "";
+                position: absolute;
+                top: -2px;
+                left: -2px;
+                right: -2px;
+                bottom: -2px;
+                background: linear-gradient(45deg, #ffd700, #ff6b6b, #4ecdc4, #45b7d1);
+                border-radius: 22px;
+                z-index: -1;
+                animation: borderGlow 3s ease-in-out infinite alternate;
+            }
+
+            @keyframes borderGlow {
+                0% { opacity: 0.5; }
+                100% { opacity: 1; }
             }
         }
 
-        @media (orientation: landscape) {
+        /* Tablet landscape - hybrid approach */
+        @media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
             .game-container {
-                width: 100vw;
-                height: 100vh;
+                width: 500px;
+                height: 600px;
             }
         }
 
@@ -64,22 +98,34 @@
             z-index: 10; 
             background-size: cover;
             background-position: center;
-            width: 100vw;
-            height: 100vh;
             object-fit: cover;
         }
 
         #board { 
             z-index: 1;
-            width: 100vw !important;
-            height: 100vh !important;
         }
 
         #ui { 
             z-index: 15;
             pointer-events: none;
-            width: 100vw !important;
-            height: 100vh !important;
+        }
+
+        /* Mobile full viewport */
+        @media (max-width: 768px) {
+            #homepage, #board, #ui {
+                width: 100vw;
+                height: 100vh;
+            }
+
+            #board { 
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+
+            #ui { 
+                width: 100vw !important;
+                height: 100vh !important;
+            }
         }
 
         /* Standardized Button Styles */
@@ -114,7 +160,7 @@
             object-fit: contain;
         }
 
-        /* Standard Button Sizes */
+        /* Standard Button Sizes - Mobile */
         .btn-large {
             width: 160px;
             height: 70px;
@@ -136,36 +182,97 @@
             min-height: 50px;
         }
 
-        /* Specific Button Positioning */
+        /* Desktop Button Sizes */
+        @media (min-width: 769px) and (pointer: fine) {
+            .btn-large {
+                width: 140px;
+                height: 60px;
+                min-width: 140px;
+                min-height: 60px;
+            }
+
+            .btn-medium {
+                width: 70px;
+                height: 70px;
+                min-width: 70px;
+                min-height: 70px;
+            }
+
+            .btn-small {
+                width: 45px;
+                height: 45px;
+                min-width: 45px;
+                min-height: 45px;
+            }
+
+            .game-control:hover {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+
+            .game-control:active {
+                transform: scale(0.95);
+            }
+        }
+
+        /* Button Positioning - Mobile */
         #start-btn {
             left: 50%;
-            top: 85%;
+            top: 35%;
             transform: translateX(-50%);
         }
         
-        /* Game Over Screen Layout - Fixed Overlapping */
         #restart-btn {
             left: 30%;
-            top: 80%;
+            top: 70%;
             transform: translateX(-50%);
         }
 
         #sound-btn-gameover, #mute-btn-gameover {
             right: 20%;
-            top: 15px;
+            top: 70%;
         }
 
-        /* Home Screen Controls */
         #sound-btn-home, #mute-btn-home {
             left: 15px;
+            /* bottom: 15px; */
             top: 15px;
-            /* top: auto; */
         }
 
-        /* Game Controls */
         #pause-btn, #play-btn {
             right: 15px;
-            top: 13px;
+            top: 15px;
+        }
+
+        /* Desktop Button Positioning */
+        @media (min-width: 769px) and (pointer: fine) {
+            #start-btn {
+                left: 50%;
+                top: 35%;
+                transform: translateX(-50%);
+            }
+            
+            #restart-btn {
+                left: 30%;
+                top: 70%;
+                transform: translateX(-50%);
+            }
+
+            #sound-btn-gameover, #mute-btn-gameover {
+                right: 20%;
+                top: 70%;
+            }
+
+            #sound-btn-home, #mute-btn-home {
+                left: 15px;
+                /* bottom: 20px; */
+                top: 15px;
+            }
+
+            #pause-btn, #play-btn {
+                right: 20px;
+                top: 5px;
+            }
         }
 
         .pause-overlay {
@@ -191,7 +298,7 @@
         #board, #ui { display: none; }
         #homepage { display: block; }
 
-        /* Responsive Button Adjustments */
+        /* Mobile Responsive Adjustments */
         @media (max-width: 480px) {
             .btn-large {
                 width: 140px;
@@ -215,15 +322,13 @@
             }
 
             #start-btn {
-                top: 35%;
+                top: 75%;
             }
 
-            #restart-btn,
-            #sound-btn-gameover,
-            #mute-btn-gameover {
+            #restart-btn {
                 top: 70%;
             }
-        }  
+        }
 
         @media (max-width: 320px) {
             .btn-large {
@@ -249,7 +354,7 @@
 
             #sound-btn-home, #mute-btn-home {
                 left: 10px;
-                top: 10px;
+                bottom: 10px;
             }
             
             #pause-btn, #play-btn {
@@ -258,21 +363,19 @@
             }
         }
 
-        /* Landscape orientation adjustments */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .game-container {
-                height: 100vh;
-                width: calc(100vh * 0.5625);
-            }
-            
+        /* Landscape Mobile Adjustments */
+        @media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
             #start-btn {
-                top: 55%;
+                top: 65%;
             }
             
-            #restart-btn,
-            #sound-btn-gameover,
-            #mute-btn-gameover {
-                top: 65%;
+            #restart-btn {
+                top: 60%;
+            }
+
+            #sound-btn-home, #mute-btn-home {
+                left: 15px;
+                bottom: 15px;
             }
         }
 
@@ -281,35 +384,6 @@
             .game-control img {
                 image-rendering: -webkit-optimize-contrast;
                 image-rendering: optimize-contrast;
-            }
-        }
-
-        /* Tablet adjustments */
-        @media (min-width: 768px) and (min-height: 1024px) {
-            .game-container {
-                width: 400px;
-                height: 711px;
-            }
-
-            .btn-large {
-                width: 180px;
-                height: 80px;
-                min-width: 180px;
-                min-height: 80px;
-            }
-
-            .btn-medium {
-                width: 90px;
-                height: 90px;
-                min-width: 90px;
-                min-height: 90px;
-            }
-
-            .btn-small {
-                width: 55px;
-                height: 55px;
-                min-width: 55px;
-                min-height: 55px;
             }
         }
 
@@ -334,10 +408,52 @@
             outline-offset: 2px;
         }
 
-        /* Button hover effects for desktop */
-        @media (hover: hover) {
+        /* Desktop hover effects */
+        @media (hover: hover) and (pointer: fine) {
             .game-control:hover {
                 transform: scale(1.05);
+            }
+        }
+
+        /* Mobile touch improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .game-control {
+                transition: transform 0.05s ease;
+            }
+
+            .game-control:active {
+                transform: scale(0.85);
+            }
+        }
+
+        /* Desktop info panel */
+        @media (min-width: 769px) and (pointer: fine) {
+            .desktop-info {
+                position: absolute;
+                bottom: -80px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: #fff;
+                text-align: center;
+                font-size: 14px;
+                opacity: 0.7;
+                z-index: 1001;
+            }
+
+            .desktop-controls {
+                margin-top: 10px;
+                font-size: 12px;
+                color: #ccc;
+            }
+        }
+
+        .desktop-info {
+            display: none;
+        }
+
+        @media (min-width: 769px) and (pointer: fine) {
+            .desktop-info {
+                display: block;
             }
         }
     </style>
@@ -387,6 +503,14 @@
             <button id="mute-btn-pause" class="game-control btn-medium" aria-label="Sound Off">
                 <img src="images/mute.png" alt="Sound Off">
             </button>
+        </div>
+
+        <!-- Desktop Info Panel -->
+        <div class="desktop-info">
+            <div>Superman Game - Desktop Version</div>
+            <div class="desktop-controls">
+                Space/↑: Fly | P: Pause | M: Mute | Enter: Restart
+            </div>
         </div>
     </div>
     <script src="Superman.js"></script>
