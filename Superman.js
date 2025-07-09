@@ -29,14 +29,24 @@ const maxEnemySpeed = -8
 const MAX_DIFFICULTY_LEVEL = 5
 const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200
 
-// Device detection
+// Device detection and performance optimization
 let isDesktop = false
 let isMobile = false
+let isIOS = false
+let performanceMode = "normal"
 
-// Touch handling variables
+// Performance monitoring
+let frameCount = 0
+let lastFPSCheck = 0
+let currentFPS = 60
+let targetFPS = 60
+
+// Touch handling variables - optimized for iOS
 let touchStartTime = 0
 let touchStartY = 0
 let isTouchActive = false
+let lastTouchTime = 0
+const TOUCH_DEBOUNCE_TIME = 50 // Prevent rapid touch events
 
 // Superman
 const SupermanWidth = 74.8
@@ -71,7 +81,7 @@ const levelSpeedIncrease = -0.5
 const baseObstacleChance = 0.1
 const obstacleIncreasePerLevel = 0.05
 
-// Images
+// Images - preloaded and optimized
 let topPipeImg
 let bottomPipeImg
 let newTopPipeImg
@@ -102,7 +112,7 @@ let isLevelAnimating = false
 let levelAnimationStartTime = 0
 const levelAnimationDuration = 1000
 
-// Sound elements
+// Sound elements - optimized for iOS
 const bgMusic = new Audio("./sound/bg.mp3")
 const flySound = new Audio("./sound/fly.mp3")
 const hitSound = new Audio("./sound/hit.mp3")
@@ -117,23 +127,98 @@ const muteBtnHome = document.getElementById("mute-btn-home")
 const soundBtnGameover = document.getElementById("sound-btn-gameover")
 const muteBtnGameover = document.getElementById("mute-btn-gameover")
 
-// Device detection function
+// Performance optimization functions
 function detectDevice() {
   const userAgent = navigator.userAgent
   const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0
   const screenWidth = window.innerWidth
   const screenHeight = window.innerHeight
 
+  // iOS detection
+  isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+
   // Check for desktop: large screen + fine pointer + no touch primary input
   isDesktop =
     screenWidth >= 769 && window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(hover: none)").matches
-
   isMobile = !isDesktop
 
-  console.log(`Device detected: ${isDesktop ? "Desktop" : "Mobile"} (${screenWidth}x${screenHeight})`)
+  // Performance mode based on device
+  if (isIOS) {
+    performanceMode = "ios-optimized"
+    targetFPS = 60
+  } else if (isMobile) {
+    performanceMode = "mobile-optimized"
+    targetFPS = 60
+  } else {
+    performanceMode = "desktop"
+    targetFPS = 60
+  }
+
+  console.log(`Device: ${isIOS ? "iOS" : isMobile ? "Mobile" : "Desktop"} | Performance Mode: ${performanceMode}`)
 }
 
-// Responsive canvas scaling
+function optimizeAudioForIOS() {
+  if (isIOS) {
+    // iOS audio optimizations
+    bgMusic.preload = "auto"
+    flySound.preload = "auto"
+    hitSound.preload = "auto"
+
+    // Reduce audio quality for better performance
+    bgMusic.volume = 0.7
+    flySound.volume = 0.8
+    hitSound.volume = 0.8
+
+    // Enable hardware acceleration for audio
+    bgMusic.setAttribute("webkit-playsinline", "true")
+    flySound.setAttribute("webkit-playsinline", "true")
+    hitSound.setAttribute("webkit-playsinline", "true")
+  }
+}
+
+function optimizeCanvasForIOS() {
+  if (isIOS) {
+    // iOS canvas optimizations
+    const contextOptions = {
+      alpha: false,
+      desynchronized: true,
+      powerPreference: "high-performance",
+    }
+
+    // Re-get contexts with optimizations
+    if (context) {
+      context.imageSmoothingEnabled = false
+      context.webkitImageSmoothingEnabled = false
+    }
+
+    if (uiContext) {
+      uiContext.imageSmoothingEnabled = false
+      uiContext.webkitImageSmoothingEnabled = false
+    }
+  }
+}
+
+function monitorPerformance() {
+  frameCount++
+  const now = performance.now()
+
+  if (now - lastFPSCheck >= 1000) {
+    currentFPS = frameCount
+    frameCount = 0
+    lastFPSCheck = now
+
+    // Adjust performance based on FPS
+    if (currentFPS < 45 && performanceMode !== "low-performance") {
+      performanceMode = "low-performance"
+      console.log("Switching to low-performance mode")
+    } else if (currentFPS > 55 && performanceMode === "low-performance") {
+      performanceMode = isIOS ? "ios-optimized" : "normal"
+      console.log("Switching back to normal performance mode")
+    }
+  }
+}
+
+// Responsive canvas scaling - optimized for iOS
 function updateCanvasSize() {
   detectDevice()
 
@@ -141,26 +226,32 @@ function updateCanvasSize() {
   const containerRect = container.getBoundingClientRect()
 
   if (isMobile) {
-    // Mobile: Full viewport
+    // Mobile: Full viewport with iOS optimizations
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
 
-    board.width = viewportWidth
-    board.height = viewportHeight
-    ui.width = viewportWidth
-    ui.height = viewportHeight
+    // Use device pixel ratio for crisp rendering on iOS
+    const devicePixelRatio = window.devicePixelRatio || 1
+    const scaleFactor = isIOS ? Math.min(devicePixelRatio, 2) : 1
 
-    const scaleX = viewportWidth / boardWidth
-    const scaleY = viewportHeight / boardHeight
+    board.width = viewportWidth * scaleFactor
+    board.height = viewportHeight * scaleFactor
+    ui.width = viewportWidth * scaleFactor
+    ui.height = viewportHeight * scaleFactor
+
+    // Scale back down with CSS for crisp rendering
+    board.style.width = viewportWidth + "px"
+    board.style.height = viewportHeight + "px"
+    ui.style.width = viewportWidth + "px"
+    ui.style.height = viewportHeight + "px"
+
+    const scaleX = (viewportWidth * scaleFactor) / boardWidth
+    const scaleY = (viewportHeight * scaleFactor) / boardHeight
 
     window.gameScaleX = scaleX
     window.gameScaleY = scaleY
 
-    board.style.width = "100vw"
-    board.style.height = "100vh"
     board.style.transform = "none"
-    ui.style.width = "100vw"
-    ui.style.height = "100vh"
     ui.style.transform = "none"
   } else {
     // Desktop: Fixed container size
@@ -185,6 +276,9 @@ function updateCanvasSize() {
     ui.style.height = "100%"
     ui.style.transform = "none"
   }
+
+  // Apply iOS-specific optimizations
+  optimizeCanvasForIOS()
 }
 
 window.onload = () => {
@@ -198,9 +292,10 @@ window.onload = () => {
   uiCanvas.width = boardWidth
   uiContext = uiCanvas.getContext("2d")
 
-  // Detect device and update canvas size
+  // Detect device and optimize
   detectDevice()
   updateCanvasSize()
+  optimizeAudioForIOS()
 
   // Add event listeners for responsive updates
   window.addEventListener("resize", () => {
@@ -211,25 +306,54 @@ window.onload = () => {
     setTimeout(updateCanvasSize, 200)
   })
 
-  // Load images
+  // Load and optimize images
+  const imageLoadPromises = []
+
   powerUpImg.src = "./images/powerups.png"
   enemyImg.src = "./images/enemy.png"
+
   SupermanImg = new Image()
   SupermanImg.src = "./images/superman1.png"
+
   topPipeImg = new Image()
   topPipeImg.src = "./images/toppipe.png"
+
   bottomPipeImg = new Image()
   bottomPipeImg.src = "./images/bottompipe.png"
+
   newTopPipeImg = new Image()
   newTopPipeImg.src = "./images/pipe11.png"
+
   newBottomPipeImg = new Image()
   newBottomPipeImg.src = "./images/pipe1.png"
+
   gameOverImg = new Image()
   gameOverImg.src = "./images/gameover.png"
+
   highScoreImg = new Image()
   highScoreImg.src = "./images/highscore.png"
+
   collisionImg = new Image()
   collisionImg.src = "./images/collision.png"
+
+  // Optimize images for iOS
+  if (isIOS) {
+    ;[
+      powerUpImg,
+      enemyImg,
+      SupermanImg,
+      topPipeImg,
+      bottomPipeImg,
+      newTopPipeImg,
+      newBottomPipeImg,
+      gameOverImg,
+      highScoreImg,
+      collisionImg,
+    ].forEach((img) => {
+      img.style.imageRendering = "-webkit-optimize-contrast"
+      img.style.imageRendering = "optimize-contrast"
+    })
+  }
 
   // Initialize sound
   bgMusic.loop = true
@@ -239,8 +363,8 @@ window.onload = () => {
   setupEventListeners()
   showHomepage()
 
-  // Prevent default touch behaviors on mobile
-  if (isMobile) {
+  // iOS-specific touch behavior prevention
+  if (isIOS) {
     document.addEventListener(
       "touchmove",
       (e) => {
@@ -256,11 +380,20 @@ window.onload = () => {
       },
       { passive: false },
     )
+
+    // Prevent iOS bounce effect
+    document.addEventListener(
+      "touchforcechange",
+      (e) => {
+        e.preventDefault()
+      },
+      { passive: false },
+    )
   }
 }
 
 function setupEventListeners() {
-  // Enhanced button setup with better touch handling
+  // Enhanced button setup with iOS optimizations
   setupButton(startBtn, startGame)
   setupButton(restartBtn, restartGame)
   setupButton(pauseBtn, pauseGame)
@@ -277,16 +410,14 @@ function setupEventListeners() {
   document.addEventListener("keydown", handleKeyPress)
 
   if (isMobile) {
-    // Mobile touch controls
+    // Optimized mobile touch controls
     board.addEventListener("touchstart", handleGameTouchStart, { passive: false })
     board.addEventListener("touchend", handleGameTouchEnd, { passive: false })
-    board.addEventListener(
-      "touchmove",
-      (e) => {
-        e.preventDefault()
-      },
-      { passive: false },
-    )
+
+    if (isIOS) {
+      // iOS-specific optimizations
+      board.addEventListener("touchcancel", handleGameTouchEnd, { passive: false })
+    }
 
     const gameContainer = document.querySelector(".game-container")
     gameContainer.addEventListener("touchstart", handleContainerTouch, { passive: false })
@@ -305,17 +436,19 @@ function setupButton(button, callback) {
   button.removeEventListener("click", callback)
   button.removeEventListener("touchend", handleButtonTouch)
 
-  // Enhanced touch handling for buttons
+  // iOS-optimized touch handling for buttons
   function handleButtonTouch(e) {
     e.preventDefault()
     e.stopPropagation()
 
+    // Immediate visual feedback for iOS
     button.classList.add("button-active")
 
-    setTimeout(() => {
+    // Use requestAnimationFrame for smooth iOS performance
+    requestAnimationFrame(() => {
       button.classList.remove("button-active")
       callback()
-    }, 100)
+    })
   }
 
   // Add both mouse and touch events
@@ -349,23 +482,39 @@ function setupButton(button, callback) {
   }
 }
 
-// Mobile touch handlers
+// Optimized mobile touch handlers for iOS
 function handleGameTouchStart(e) {
   if (!isMobile) return
 
   e.preventDefault()
   e.stopPropagation()
 
+  const now = performance.now()
+
+  // Debounce rapid touches for iOS performance
+  if (now - lastTouchTime < TOUCH_DEBOUNCE_TIME) {
+    return
+  }
+  lastTouchTime = now
+
   if (!gameStarted || gameOver || isPaused || isCountdownActive) return
 
   isTouchActive = true
-  touchStartTime = Date.now()
+  touchStartTime = now
   touchStartY = e.touches[0].clientY
 
+  // Immediate response for iOS - no delay
   velocityY = -6
+
   if (soundEnabled) {
-    flySound.currentTime = 0
-    flySound.play().catch(() => {})
+    // Optimized audio playback for iOS
+    if (isIOS) {
+      flySound.currentTime = 0
+      flySound.play().catch(() => {})
+    } else {
+      flySound.currentTime = 0
+      flySound.play().catch(() => {})
+    }
   }
 }
 
@@ -406,6 +555,14 @@ function handleContainerTouch(e) {
 
   e.preventDefault()
   e.stopPropagation()
+
+  const now = performance.now()
+
+  // Debounce for iOS performance
+  if (now - lastTouchTime < TOUCH_DEBOUNCE_TIME) {
+    return
+  }
+  lastTouchTime = now
 
   if (gameStarted && !gameOver && !isPaused && !isCountdownActive) {
     velocityY = -6
@@ -465,8 +622,11 @@ function toggleSound() {
     muteBtnHome.style.display = soundEnabled ? "none" : "block"
   }
 
-  if (soundEnabled) bgMusic.play()
-  else bgMusic.pause()
+  if (soundEnabled) {
+    bgMusic.play().catch(() => {})
+  } else {
+    bgMusic.pause()
+  }
 }
 
 function updateSoundDisplay() {
@@ -496,7 +656,7 @@ function resumeGame() {
   pauseOverlay.style.display = "none"
   pauseBtn.style.display = "block"
   playBtn.style.display = "none"
-  if (soundEnabled) bgMusic.play()
+  if (soundEnabled) bgMusic.play().catch(() => {})
   pipeInterval = setDynamicPipeInterval()
   cancelAnimationFrame(animationFrameId)
   requestAnimationFrame(update)
@@ -516,6 +676,10 @@ function startGame() {
   powerUpArray = []
   enemyArray = []
   shieldActive = false
+
+  // Reset performance monitoring
+  frameCount = 0
+  lastFPSCheck = performance.now()
 
   // Hide/show elements
   homepage.style.display = "none"
@@ -546,7 +710,7 @@ function animateCountdown() {
   uiContext.save()
   uiContext.scale(scaleX, scaleY)
 
-  // Clear canvases
+  // Clear canvases efficiently
   context.clearRect(0, 0, boardWidth, boardHeight)
   uiContext.clearRect(0, 0, boardWidth, boardHeight)
 
@@ -572,7 +736,7 @@ function animateCountdown() {
     gameStarted = true
     pauseBtn.style.display = "block"
 
-    if (soundEnabled) bgMusic.play()
+    if (soundEnabled) bgMusic.play().catch(() => {})
     pipeInterval = setDynamicPipeInterval()
     requestAnimationFrame(update)
   } else {
@@ -582,6 +746,10 @@ function animateCountdown() {
 
 function update() {
   if (!gameStarted || gameOver || isPaused || isCountdownActive) return
+
+  // Performance monitoring
+  monitorPerformance()
+
   animationFrameId = requestAnimationFrame(update)
 
   // Scale context to match viewport
@@ -593,13 +761,21 @@ function update() {
   uiContext.save()
   uiContext.scale(scaleX, scaleY)
 
-  context.clearRect(0, 0, boardWidth, boardHeight)
-  uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  // Efficient clearing for iOS
+  if (isIOS && performanceMode === "low-performance") {
+    // Use fillRect for better iOS performance in low-performance mode
+    context.fillStyle = "#000"
+    context.fillRect(0, 0, boardWidth, boardHeight)
+    uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  } else {
+    context.clearRect(0, 0, boardWidth, boardHeight)
+    uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  }
 
   currentLevel = Math.floor(score / 15)
   if (currentLevel > lastLevelCheckpoint && !isLevelAnimating) {
     isLevelAnimating = true
-    levelAnimationStartTime = Date.now()
+    levelAnimationStartTime = performance.now()
     updateDifficulty()
   }
 
@@ -613,14 +789,14 @@ function update() {
   uiContext.textAlign = "center"
   uiContext.fillText(`LEVEL ${currentLevel}`, boardWidth / 2, 30)
 
-  // Superman physics
+  // Superman physics (unchanged)
   velocityY += gravity
   Superman.y = Math.max(Superman.y + velocityY, 0)
   context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
 
   if (Superman.y > board.height) endGame()
 
-  // Pipe handling
+  // Optimized pipe handling
   for (let i = 0; i < pipeArray.length; i++) {
     const pipe = pipeArray[i]
     pipe.x += velocityX
@@ -637,6 +813,7 @@ function update() {
     }
   }
 
+  // Efficient array cleanup
   while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
     pipeArray.shift()
   }
@@ -655,7 +832,7 @@ function update() {
 
   // Level animation
   if (isLevelAnimating) {
-    const elapsed = Date.now() - levelAnimationStartTime
+    const elapsed = performance.now() - levelAnimationStartTime
     const progress = Math.min(elapsed / levelAnimationDuration, 1)
     uiContext.save()
     uiContext.textAlign = "center"
@@ -743,6 +920,7 @@ function update() {
     spawnEnemy()
     lastEnemySpawn = now
   }
+
   context.restore()
   uiContext.restore()
 }
@@ -815,7 +993,7 @@ function handleKeyPress(e) {
     velocityY = -6
     if (soundEnabled) {
       flySound.currentTime = 0
-      flySound.play()
+      flySound.play().catch(() => {})
     }
   }
 
@@ -846,10 +1024,14 @@ function restartGame() {
   powerUpArray = []
   enemyArray = []
 
+  // Reset performance monitoring
+  frameCount = 0
+  lastFPSCheck = performance.now()
+
   context.clearRect(0, 0, board.width, board.height)
   uiContext.clearRect(0, 0, board.width, board.height)
 
-  if (soundEnabled) bgMusic.play()
+  if (soundEnabled) bgMusic.play().catch(() => {})
   showHomepage()
 }
 
@@ -892,7 +1074,7 @@ function endGame() {
 
   if (soundEnabled) {
     hitSound.currentTime = 0
-    hitSound.play()
+    hitSound.play().catch(() => {})
   }
 }
 
