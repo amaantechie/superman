@@ -29,24 +29,49 @@ const maxEnemySpeed = -8
 const MAX_DIFFICULTY_LEVEL = 5
 const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200
 
-// Device detection and performance optimization
+// Browser and device detection
 let isDesktop = false
 let isMobile = false
 let isIOS = false
+let isSafari = false
+let isChrome = false
+let isWebKit = false
 let performanceMode = "normal"
+let TOUCH_DEBOUNCE_TIME = 50 // Initial value for TOUCH_DEBOUNCE_TIME
 
-// Performance monitoring
+// Performance monitoring and optimization
 let frameCount = 0
 let lastFPSCheck = 0
 let currentFPS = 60
 let targetFPS = 60
+let lastFrameTime = 0
+let frameTimeBuffer = []
+let averageFrameTime = 16.67 // 60fps target
 
-// Touch handling variables - optimized for iOS
+// Safari-specific optimizations
+const safariOptimizations = {
+  useOffscreenCanvas: false,
+  reduceImageSmoothing: true,
+  optimizeAudioLoading: true,
+  useRequestIdleCallback: false,
+  batchDOMUpdates: true,
+  useWebGLFallback: false,
+}
+
+// Chrome-specific optimizations
+const chromeOptimizations = {
+  useOffscreenCanvas: true,
+  enableImageSmoothing: false,
+  useAdvancedAudio: true,
+  useRequestIdleCallback: true,
+  enableGPUAcceleration: true,
+}
+
+// Touch handling variables - browser-optimized
 let touchStartTime = 0
 let touchStartY = 0
 let isTouchActive = false
 let lastTouchTime = 0
-const TOUCH_DEBOUNCE_TIME = 50 // Prevent rapid touch events
 
 // Superman
 const SupermanWidth = 74.8
@@ -81,7 +106,7 @@ const levelSpeedIncrease = -0.5
 const baseObstacleChance = 0.1
 const obstacleIncreasePerLevel = 0.05
 
-// Images - preloaded and optimized
+// Images - browser-optimized loading
 let topPipeImg
 let bottomPipeImg
 let newTopPipeImg
@@ -90,6 +115,10 @@ let gameOverImg
 let yourScoreImg
 let highScoreImg
 let collisionImg
+
+// Image cache for Safari optimization
+const imageCache = new Map()
+let preloadedImages = false
 
 // Game variables
 let velocityX = baseVelocityX
@@ -112,12 +141,14 @@ let isLevelAnimating = false
 let levelAnimationStartTime = 0
 const levelAnimationDuration = 1000
 
-// Sound elements - optimized for iOS
+// Sound elements - browser-optimized
 const bgMusic = new Audio("./sound/bg.mp3")
 const flySound = new Audio("./sound/fly.mp3")
 const hitSound = new Audio("./sound/hit.mp3")
 let soundEnabled = true
 let isPaused = false
+let audioContext = null
+const audioBuffers = new Map()
 
 // UI elements
 const pauseBtn = document.getElementById("pause-btn")
@@ -127,134 +158,308 @@ const muteBtnHome = document.getElementById("mute-btn-home")
 const soundBtnGameover = document.getElementById("sound-btn-gameover")
 const muteBtnGameover = document.getElementById("mute-btn-gameover")
 
-// Performance optimization functions
-function detectDevice() {
+// Browser detection and optimization setup
+function detectBrowserAndOptimize() {
   const userAgent = navigator.userAgent
   const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0
   const screenWidth = window.innerWidth
   const screenHeight = window.innerHeight
 
-  // iOS detection
+  // Browser detection
+  isSafari = /^((?!chrome|android).)*safari/i.test(userAgent) || /iPad|iPhone|iPod/.test(userAgent)
+  isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor)
+  isWebKit = /WebKit/.test(userAgent)
   isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
 
-  // Check for desktop: large screen + fine pointer + no touch primary input
+  // Device detection
   isDesktop =
     screenWidth >= 769 && window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(hover: none)").matches
   isMobile = !isDesktop
 
-  // Performance mode based on device
-  if (isIOS) {
-    performanceMode = "ios-optimized"
+  // Performance mode based on browser and device
+  if (isSafari) {
+    performanceMode = "safari-optimized"
     targetFPS = 60
-  } else if (isMobile) {
-    performanceMode = "mobile-optimized"
+    TOUCH_DEBOUNCE_TIME = 30 // Faster response for Safari
+  } else if (isChrome) {
+    performanceMode = "chrome-optimized"
+    targetFPS = 60
+  } else if (isIOS) {
+    performanceMode = "ios-webkit"
     targetFPS = 60
   } else {
-    performanceMode = "desktop"
+    performanceMode = "standard"
     targetFPS = 60
   }
 
-  console.log(`Device: ${isIOS ? "iOS" : isMobile ? "Mobile" : "Desktop"} | Performance Mode: ${performanceMode}`)
+  console.log(
+    `Browser: ${isSafari ? "Safari" : isChrome ? "Chrome" : "Other"} | Device: ${isIOS ? "iOS" : isMobile ? "Mobile" : "Desktop"} | Mode: ${performanceMode}`,
+  )
+
+  // Apply browser-specific optimizations
+  if (isSafari) {
+    applySafariOptimizations()
+  } else if (isChrome) {
+    applyChromeOptimizations()
+  }
 }
 
-function optimizeAudioForIOS() {
-  if (isIOS) {
-    // iOS audio optimizations
+function applySafariOptimizations() {
+  // Safari-specific canvas optimizations
+  safariOptimizations.useOffscreenCanvas = false // Safari has poor OffscreenCanvas support
+  safariOptimizations.reduceImageSmoothing = true
+  safariOptimizations.optimizeAudioLoading = true
+  safariOptimizations.batchDOMUpdates = true
+
+  // Safari-specific CSS optimizations
+  document.documentElement.style.setProperty("--webkit-transform", "translateZ(0)")
+  document.body.style.webkitBackfaceVisibility = "hidden"
+  document.body.style.webkitPerspective = "1000px"
+
+  // Optimize for Safari's rendering engine
+  if (board) {
+    board.style.webkitTransform = "translateZ(0)"
+    board.style.webkitBackfaceVisibility = "hidden"
+  }
+
+  if (ui) {
+    ui.style.webkitTransform = "translateZ(0)"
+    ui.style.webkitBackfaceVisibility = "hidden"
+  }
+}
+
+function applyChromeOptimizations() {
+  // Chrome-specific optimizations
+  chromeOptimizations.useOffscreenCanvas = true
+  chromeOptimizations.enableImageSmoothing = false
+  chromeOptimizations.useAdvancedAudio = true
+  chromeOptimizations.enableGPUAcceleration = true
+
+  // Chrome-specific performance hints
+  if (board) {
+    board.style.willChange = "transform"
+  }
+
+  if (ui) {
+    ui.style.willChange = "transform"
+  }
+}
+
+function optimizeAudioForBrowser() {
+  if (isSafari) {
+    // Safari audio optimizations
+    bgMusic.preload = "metadata" // Reduce initial loading
+    flySound.preload = "auto"
+    hitSound.preload = "auto"
+
+    // Safari-specific audio settings
+    bgMusic.volume = 0.6
+    flySound.volume = 0.7
+    hitSound.volume = (0.7)[
+      // Enable hardware acceleration for Safari
+      (bgMusic, flySound, hitSound)
+    ].forEach((audio) => {
+      audio.setAttribute("webkit-playsinline", "true")
+      audio.setAttribute("playsinline", "true")
+      audio.muted = false
+    })
+
+    // Safari audio context optimization
+    try {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    } catch (e) {
+      console.log("AudioContext not supported")
+    }
+  } else if (isChrome) {
+    // Chrome audio optimizations
     bgMusic.preload = "auto"
     flySound.preload = "auto"
     hitSound.preload = "auto"
 
-    // Reduce audio quality for better performance
-    bgMusic.volume = 0.7
-    flySound.volume = 0.8
-    hitSound.volume = 0.8
-
-    // Enable hardware acceleration for audio
-    bgMusic.setAttribute("webkit-playsinline", "true")
-    flySound.setAttribute("webkit-playsinline", "true")
-    hitSound.setAttribute("webkit-playsinline", "true")
+    // Chrome-specific audio settings
+    bgMusic.volume = 0.8
+    flySound.volume = 0.9
+    hitSound.volume = 0.9
   }
 }
 
-function optimizeCanvasForIOS() {
-  if (isIOS) {
-    // iOS canvas optimizations
+function optimizeCanvasForBrowser() {
+  if (!context || !uiContext) return
+
+  if (isSafari) {
+    // Safari canvas optimizations
     const contextOptions = {
       alpha: false,
       desynchronized: true,
       powerPreference: "high-performance",
+      antialias: false,
     }
 
-    // Re-get contexts with optimizations
-    if (context) {
-      context.imageSmoothingEnabled = false
-      context.webkitImageSmoothingEnabled = false
-    }
+    // Disable image smoothing for better Safari performance
+    context.imageSmoothingEnabled = false
+    context.webkitImageSmoothingEnabled = false
+    context.mozImageSmoothingEnabled = false
+    context.msImageSmoothingEnabled = false
 
-    if (uiContext) {
-      uiContext.imageSmoothingEnabled = false
-      uiContext.webkitImageSmoothingEnabled = false
+    uiContext.imageSmoothingEnabled = false
+    uiContext.webkitImageSmoothingEnabled = false
+    uiContext.mozImageSmoothingEnabled = false
+    uiContext.msImageSmoothingEnabled = false
+
+    // Safari-specific rendering optimizations
+    context.textRenderingOptimization = "speed"
+    uiContext.textRenderingOptimization = "speed"
+  } else if (isChrome) {
+    // Chrome canvas optimizations
+    context.imageSmoothingEnabled = false
+    uiContext.imageSmoothingEnabled = false
+
+    // Chrome-specific optimizations
+    if (context.getContextAttributes) {
+      const attrs = context.getContextAttributes()
+      if (attrs) {
+        attrs.desynchronized = true
+        attrs.powerPreference = "high-performance"
+      }
     }
   }
 }
 
-function monitorPerformance() {
-  frameCount++
+function preloadImagesOptimized() {
+  const imageUrls = [
+    "./images/powerups.png",
+    "./images/enemy.png",
+    "./images/superman1.png",
+    "./images/toppipe.png",
+    "./images/bottompipe.png",
+    "./images/pipe11.png",
+    "./images/pipe1.png",
+    "./images/gameover.png",
+    "./images/highscore.png",
+    "./images/collision.png",
+  ]
+
+  const imagePromises = imageUrls.map((url) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+
+      if (isSafari) {
+        // Safari-specific image loading
+        img.crossOrigin = "anonymous"
+        img.style.imageRendering = "-webkit-optimize-contrast"
+      } else if (isChrome) {
+        // Chrome-specific image loading
+        img.style.imageRendering = "pixelated"
+      }
+
+      img.onload = () => {
+        imageCache.set(url, img)
+        resolve(img)
+      }
+      img.onerror = reject
+      img.src = url
+    })
+  })
+
+  return Promise.all(imagePromises).then(() => {
+    preloadedImages = true
+    console.log("Images preloaded for", isSafari ? "Safari" : "Chrome")
+  })
+}
+
+function monitorPerformanceAdvanced() {
   const now = performance.now()
+  const frameTime = now - lastFrameTime
+  lastFrameTime = now
+
+  frameTimeBuffer.push(frameTime)
+  if (frameTimeBuffer.length > 60) {
+    frameTimeBuffer.shift()
+  }
+
+  averageFrameTime = frameTimeBuffer.reduce((a, b) => a + b, 0) / frameTimeBuffer.length
+  currentFPS = 1000 / averageFrameTime
+
+  frameCount++
 
   if (now - lastFPSCheck >= 1000) {
-    currentFPS = frameCount
+    const measuredFPS = frameCount
     frameCount = 0
     lastFPSCheck = now
 
-    // Adjust performance based on FPS
-    if (currentFPS < 45 && performanceMode !== "low-performance") {
-      performanceMode = "low-performance"
-      console.log("Switching to low-performance mode")
-    } else if (currentFPS > 55 && performanceMode === "low-performance") {
-      performanceMode = isIOS ? "ios-optimized" : "normal"
-      console.log("Switching back to normal performance mode")
+    // Browser-specific performance adjustments
+    if (isSafari && measuredFPS < 45) {
+      // Safari performance degradation handling
+      performanceMode = "safari-low-performance"
+      safariOptimizations.reduceImageSmoothing = true
+      safariOptimizations.batchDOMUpdates = true
+    } else if (isChrome && measuredFPS < 50) {
+      // Chrome performance degradation handling
+      performanceMode = "chrome-low-performance"
+    } else if (measuredFPS > 55) {
+      // Restore normal performance mode
+      performanceMode = isSafari ? "safari-optimized" : isChrome ? "chrome-optimized" : "standard"
     }
+
+    console.log(
+      `FPS: ${measuredFPS} | Mode: ${performanceMode} | Browser: ${isSafari ? "Safari" : isChrome ? "Chrome" : "Other"}`,
+    )
   }
 }
 
-// Responsive canvas scaling - optimized for iOS
+// Responsive canvas scaling - browser-optimized
 function updateCanvasSize() {
-  detectDevice()
+  detectBrowserAndOptimize()
 
   const container = document.querySelector(".game-container")
   const containerRect = container.getBoundingClientRect()
 
   if (isMobile) {
-    // Mobile: Full viewport with iOS optimizations
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
 
-    // Use device pixel ratio for crisp rendering on iOS
-    const devicePixelRatio = window.devicePixelRatio || 1
-    const scaleFactor = isIOS ? Math.min(devicePixelRatio, 2) : 1
+    if (isSafari) {
+      // Safari-specific canvas sizing
+      const devicePixelRatio = window.devicePixelRatio || 1
+      const scaleFactor = Math.min(devicePixelRatio, 2) // Limit for Safari performance
 
-    board.width = viewportWidth * scaleFactor
-    board.height = viewportHeight * scaleFactor
-    ui.width = viewportWidth * scaleFactor
-    ui.height = viewportHeight * scaleFactor
+      board.width = viewportWidth * scaleFactor
+      board.height = viewportHeight * scaleFactor
+      ui.width = viewportWidth * scaleFactor
+      ui.height = viewportHeight * scaleFactor
 
-    // Scale back down with CSS for crisp rendering
-    board.style.width = viewportWidth + "px"
-    board.style.height = viewportHeight + "px"
-    ui.style.width = viewportWidth + "px"
-    ui.style.height = viewportHeight + "px"
+      board.style.width = viewportWidth + "px"
+      board.style.height = viewportHeight + "px"
+      ui.style.width = viewportWidth + "px"
+      ui.style.height = viewportHeight + "px"
 
-    const scaleX = (viewportWidth * scaleFactor) / boardWidth
-    const scaleY = (viewportHeight * scaleFactor) / boardHeight
+      const scaleX = (viewportWidth * scaleFactor) / boardWidth
+      const scaleY = (viewportHeight * scaleFactor) / boardHeight
 
-    window.gameScaleX = scaleX
-    window.gameScaleY = scaleY
+      window.gameScaleX = scaleX
+      window.gameScaleY = scaleY
+    } else {
+      // Chrome and other browsers
+      const devicePixelRatio = window.devicePixelRatio || 1
 
-    board.style.transform = "none"
-    ui.style.transform = "none"
+      board.width = viewportWidth * devicePixelRatio
+      board.height = viewportHeight * devicePixelRatio
+      ui.width = viewportWidth * devicePixelRatio
+      ui.height = viewportHeight * devicePixelRatio
+
+      board.style.width = viewportWidth + "px"
+      board.style.height = viewportHeight + "px"
+      ui.style.width = viewportWidth + "px"
+      ui.style.height = viewportHeight + "px"
+
+      const scaleX = (viewportWidth * devicePixelRatio) / boardWidth
+      const scaleY = (viewportHeight * devicePixelRatio) / boardHeight
+
+      window.gameScaleX = scaleX
+      window.gameScaleY = scaleY
+    }
   } else {
-    // Desktop: Fixed container size
+    // Desktop sizing
     const containerWidth = containerRect.width
     const containerHeight = containerRect.height
 
@@ -271,14 +476,12 @@ function updateCanvasSize() {
 
     board.style.width = "100%"
     board.style.height = "100%"
-    board.style.transform = "none"
     ui.style.width = "100%"
     ui.style.height = "100%"
-    ui.style.transform = "none"
   }
 
-  // Apply iOS-specific optimizations
-  optimizeCanvasForIOS()
+  // Apply browser-specific canvas optimizations
+  optimizeCanvasForBrowser()
 }
 
 window.onload = () => {
@@ -292,10 +495,40 @@ window.onload = () => {
   uiCanvas.width = boardWidth
   uiContext = uiCanvas.getContext("2d")
 
-  // Detect device and optimize
-  detectDevice()
+  // Browser detection and optimization
+  detectBrowserAndOptimize()
   updateCanvasSize()
-  optimizeAudioForIOS()
+  optimizeAudioForBrowser()
+
+  // Preload images with browser optimization
+  preloadImagesOptimized().then(() => {
+    // Initialize images after preloading
+    powerUpImg.src = "./images/powerups.png"
+    enemyImg.src = "./images/enemy.png"
+    SupermanImg = imageCache.get("./images/superman1.png") || new Image()
+    if (!SupermanImg.src) SupermanImg.src = "./images/superman1.png"
+
+    topPipeImg = imageCache.get("./images/toppipe.png") || new Image()
+    if (!topPipeImg.src) topPipeImg.src = "./images/toppipe.png"
+
+    bottomPipeImg = imageCache.get("./images/bottompipe.png") || new Image()
+    if (!bottomPipeImg.src) bottomPipeImg.src = "./images/bottompipe.png"
+
+    newTopPipeImg = imageCache.get("./images/pipe11.png") || new Image()
+    if (!newTopPipeImg.src) newTopPipeImg.src = "./images/pipe11.png"
+
+    newBottomPipeImg = imageCache.get("./images/pipe1.png") || new Image()
+    if (!newBottomPipeImg.src) newBottomPipeImg.src = "./images/pipe1.png"
+
+    gameOverImg = imageCache.get("./images/gameover.png") || new Image()
+    if (!gameOverImg.src) gameOverImg.src = "./images/gameover.png"
+
+    highScoreImg = imageCache.get("./images/highscore.png") || new Image()
+    if (!highScoreImg.src) highScoreImg.src = "./images/highscore.png"
+
+    collisionImg = imageCache.get("./images/collision.png") || new Image()
+    if (!collisionImg.src) collisionImg.src = "./images/collision.png"
+  })
 
   // Add event listeners for responsive updates
   window.addEventListener("resize", () => {
@@ -306,55 +539,6 @@ window.onload = () => {
     setTimeout(updateCanvasSize, 200)
   })
 
-  // Load and optimize images
-  const imageLoadPromises = []
-
-  powerUpImg.src = "./images/powerups.png"
-  enemyImg.src = "./images/enemy.png"
-
-  SupermanImg = new Image()
-  SupermanImg.src = "./images/superman1.png"
-
-  topPipeImg = new Image()
-  topPipeImg.src = "./images/toppipe.png"
-
-  bottomPipeImg = new Image()
-  bottomPipeImg.src = "./images/bottompipe.png"
-
-  newTopPipeImg = new Image()
-  newTopPipeImg.src = "./images/pipe11.png"
-
-  newBottomPipeImg = new Image()
-  newBottomPipeImg.src = "./images/pipe1.png"
-
-  gameOverImg = new Image()
-  gameOverImg.src = "./images/gameover.png"
-
-  highScoreImg = new Image()
-  highScoreImg.src = "./images/highscore.png"
-
-  collisionImg = new Image()
-  collisionImg.src = "./images/collision.png"
-
-  // Optimize images for iOS
-  if (isIOS) {
-    ;[
-      powerUpImg,
-      enemyImg,
-      SupermanImg,
-      topPipeImg,
-      bottomPipeImg,
-      newTopPipeImg,
-      newBottomPipeImg,
-      gameOverImg,
-      highScoreImg,
-      collisionImg,
-    ].forEach((img) => {
-      img.style.imageRendering = "-webkit-optimize-contrast"
-      img.style.imageRendering = "optimize-contrast"
-    })
-  }
-
   // Initialize sound
   bgMusic.loop = true
   updateSoundDisplay()
@@ -363,8 +547,8 @@ window.onload = () => {
   setupEventListeners()
   showHomepage()
 
-  // iOS-specific touch behavior prevention
-  if (isIOS) {
+  // Browser-specific touch behavior prevention
+  if (isSafari || isMobile) {
     document.addEventListener(
       "touchmove",
       (e) => {
@@ -381,19 +565,21 @@ window.onload = () => {
       { passive: false },
     )
 
-    // Prevent iOS bounce effect
-    document.addEventListener(
-      "touchforcechange",
-      (e) => {
-        e.preventDefault()
-      },
-      { passive: false },
-    )
+    if (isSafari) {
+      // Safari-specific touch optimizations
+      document.addEventListener(
+        "touchforcechange",
+        (e) => {
+          e.preventDefault()
+        },
+        { passive: false },
+      )
+    }
   }
 }
 
 function setupEventListeners() {
-  // Enhanced button setup with iOS optimizations
+  // Browser-optimized button setup
   setupButton(startBtn, startGame)
   setupButton(restartBtn, restartGame)
   setupButton(pauseBtn, pauseGame)
@@ -410,12 +596,12 @@ function setupEventListeners() {
   document.addEventListener("keydown", handleKeyPress)
 
   if (isMobile) {
-    // Optimized mobile touch controls
+    // Browser-optimized mobile touch controls
     board.addEventListener("touchstart", handleGameTouchStart, { passive: false })
     board.addEventListener("touchend", handleGameTouchEnd, { passive: false })
 
-    if (isIOS) {
-      // iOS-specific optimizations
+    if (isSafari) {
+      // Safari-specific touch optimizations
       board.addEventListener("touchcancel", handleGameTouchEnd, { passive: false })
     }
 
@@ -432,26 +618,32 @@ function setupEventListeners() {
 function setupButton(button, callback) {
   if (!button) return
 
-  // Remove existing event listeners to avoid duplicates
+  // Remove existing event listeners
   button.removeEventListener("click", callback)
   button.removeEventListener("touchend", handleButtonTouch)
 
-  // iOS-optimized touch handling for buttons
+  // Browser-optimized touch handling
   function handleButtonTouch(e) {
     e.preventDefault()
     e.stopPropagation()
 
-    // Immediate visual feedback for iOS
     button.classList.add("button-active")
 
-    // Use requestAnimationFrame for smooth iOS performance
-    requestAnimationFrame(() => {
-      button.classList.remove("button-active")
-      callback()
-    })
+    if (isSafari) {
+      // Safari-optimized button response
+      setTimeout(() => {
+        button.classList.remove("button-active")
+        callback()
+      }, 50) // Faster response for Safari
+    } else {
+      // Chrome and other browsers
+      requestAnimationFrame(() => {
+        button.classList.remove("button-active")
+        callback()
+      })
+    }
   }
 
-  // Add both mouse and touch events
   button.addEventListener("click", (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -482,7 +674,7 @@ function setupButton(button, callback) {
   }
 }
 
-// Optimized mobile touch handlers for iOS
+// Browser-optimized touch handlers
 function handleGameTouchStart(e) {
   if (!isMobile) return
 
@@ -491,7 +683,6 @@ function handleGameTouchStart(e) {
 
   const now = performance.now()
 
-  // Debounce rapid touches for iOS performance
   if (now - lastTouchTime < TOUCH_DEBOUNCE_TIME) {
     return
   }
@@ -503,15 +694,16 @@ function handleGameTouchStart(e) {
   touchStartTime = now
   touchStartY = e.touches[0].clientY
 
-  // Immediate response for iOS - no delay
+  // Immediate jump response
   velocityY = -6
 
   if (soundEnabled) {
-    // Optimized audio playback for iOS
-    if (isIOS) {
+    if (isSafari) {
+      // Safari audio optimization
       flySound.currentTime = 0
       flySound.play().catch(() => {})
     } else {
+      // Chrome and other browsers
       flySound.currentTime = 0
       flySound.play().catch(() => {})
     }
@@ -520,7 +712,6 @@ function handleGameTouchStart(e) {
 
 function handleGameTouchEnd(e) {
   if (!isMobile) return
-
   e.preventDefault()
   e.stopPropagation()
   isTouchActive = false
@@ -528,9 +719,7 @@ function handleGameTouchEnd(e) {
 
 function handleGlobalTouch(e) {
   if (!isMobile) return
-
   if (e.target.closest(".game-control")) return
-
   e.preventDefault()
 
   if (isCountdownActive) return
@@ -548,7 +737,6 @@ function handleGlobalTouch(e) {
 
 function handleContainerTouch(e) {
   if (!isMobile) return
-
   if (e.target.closest(".game-control")) return
   if (e.target.closest(".pause-overlay")) return
   if (gameOver) return
@@ -558,7 +746,6 @@ function handleContainerTouch(e) {
 
   const now = performance.now()
 
-  // Debounce for iOS performance
   if (now - lastTouchTime < TOUCH_DEBOUNCE_TIME) {
     return
   }
@@ -573,7 +760,6 @@ function handleContainerTouch(e) {
   }
 }
 
-// Desktop mouse handlers
 function handleDesktopClick(e) {
   if (!isDesktop) return
 
@@ -680,6 +866,8 @@ function startGame() {
   // Reset performance monitoring
   frameCount = 0
   lastFPSCheck = performance.now()
+  lastFrameTime = performance.now()
+  frameTimeBuffer = []
 
   // Hide/show elements
   homepage.style.display = "none"
@@ -710,9 +898,15 @@ function animateCountdown() {
   uiContext.save()
   uiContext.scale(scaleX, scaleY)
 
-  // Clear canvases efficiently
-  context.clearRect(0, 0, boardWidth, boardHeight)
-  uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  // Browser-optimized clearing
+  if (isSafari && performanceMode === "safari-low-performance") {
+    context.fillStyle = "#000"
+    context.fillRect(0, 0, boardWidth, boardHeight)
+    uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  } else {
+    context.clearRect(0, 0, boardWidth, boardHeight)
+    uiContext.clearRect(0, 0, boardWidth, boardHeight)
+  }
 
   // Draw Superman
   context.drawImage(SupermanImg, Superman.x, Superman.y, Superman.width, Superman.height)
@@ -747,8 +941,8 @@ function animateCountdown() {
 function update() {
   if (!gameStarted || gameOver || isPaused || isCountdownActive) return
 
-  // Performance monitoring
-  monitorPerformance()
+  // Advanced performance monitoring
+  monitorPerformanceAdvanced()
 
   animationFrameId = requestAnimationFrame(update)
 
@@ -761,13 +955,18 @@ function update() {
   uiContext.save()
   uiContext.scale(scaleX, scaleY)
 
-  // Efficient clearing for iOS
-  if (isIOS && performanceMode === "low-performance") {
-    // Use fillRect for better iOS performance in low-performance mode
-    context.fillStyle = "#000"
-    context.fillRect(0, 0, boardWidth, boardHeight)
+  // Browser-optimized canvas clearing
+  if (isSafari) {
+    if (performanceMode === "safari-low-performance") {
+      // Use fillRect for better Safari performance in low-performance mode
+      context.fillStyle = "#000"
+      context.fillRect(0, 0, boardWidth, boardHeight)
+    } else {
+      context.clearRect(0, 0, boardWidth, boardHeight)
+    }
     uiContext.clearRect(0, 0, boardWidth, boardHeight)
   } else {
+    // Chrome and other browsers
     context.clearRect(0, 0, boardWidth, boardHeight)
     uiContext.clearRect(0, 0, boardWidth, boardHeight)
   }
@@ -1027,6 +1226,8 @@ function restartGame() {
   // Reset performance monitoring
   frameCount = 0
   lastFPSCheck = performance.now()
+  lastFrameTime = performance.now()
+  frameTimeBuffer = []
 
   context.clearRect(0, 0, board.width, board.height)
   uiContext.clearRect(0, 0, board.width, board.height)
@@ -1114,7 +1315,6 @@ function spawnEnemy() {
 
 function detectCollision(a, b) {
   if (shieldActive) return false
-
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
 }
 
