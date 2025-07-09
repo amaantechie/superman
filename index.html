@@ -27,6 +27,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* iOS performance optimizations */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-perspective: 1000;
+            perspective: 1000;
         }
         
         /* Mobile-first responsive design */
@@ -37,6 +42,10 @@
             background-color: #000;
             overflow: hidden;
             touch-action: none;
+            /* iOS performance optimizations */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         /* Desktop fixed layout */
@@ -92,6 +101,10 @@
             width: 100%;
             height: 100%;
             touch-action: none;
+            /* iOS performance optimizations */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         #homepage { 
@@ -103,11 +116,19 @@
 
         #board { 
             z-index: 1;
+            /* Canvas performance optimizations */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         #ui { 
             z-index: 15;
             pointer-events: none;
+            /* Canvas performance optimizations */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         /* Mobile full viewport */
@@ -145,11 +166,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* iOS performance optimizations */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .game-control:active,
         .game-control.button-active {
-            transform: scale(0.9);
+            transform: scale(0.9) translateZ(0);
             opacity: 0.7;
         }
         
@@ -158,6 +183,9 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+            /* Image performance optimizations */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
         }
 
         /* Standard Button Sizes - Mobile */
@@ -206,37 +234,37 @@
             }
 
             .game-control:hover {
-                transform: scale(1.05);
+                transform: scale(1.05) translateZ(0);
                 opacity: 0.9;
             }
 
             .game-control:active {
-                transform: scale(0.95);
+                transform: scale(0.95) translateZ(0);
             }
         }
 
         /* Button Positioning - Mobile */
         #start-btn {
             left: 50%;
-            top: 35%;
-            transform: translateX(-50%);
+            top: 85%;
+            transform: translateX(-50%) translateZ(0);
         }
         
         #restart-btn {
-            left: 30%;
-            top: 70%;
-            transform: translateX(-50%);
+            left: 50%;
+            top: 80%;
+            transform: translateX(-50%) translateZ(0);
         }
 
         #sound-btn-gameover, #mute-btn-gameover {
-            right: 20%;
-            top: 70%;
+            right: 15px;
+            top: 15px;
         }
 
         #sound-btn-home, #mute-btn-home {
             left: 15px;
-            /* bottom: 15px; */
-            top: 15px;
+            bottom: 15px;
+            top: auto;
         }
 
         #pause-btn, #play-btn {
@@ -248,30 +276,30 @@
         @media (min-width: 769px) and (pointer: fine) {
             #start-btn {
                 left: 50%;
-                top: 35%;
-                transform: translateX(-50%);
+                top: 75%;
+                transform: translateX(-50%) translateZ(0);
             }
             
             #restart-btn {
-                left: 30%;
+                left: 50%;
                 top: 70%;
-                transform: translateX(-50%);
+                transform: translateX(-50%) translateZ(0);
             }
 
             #sound-btn-gameover, #mute-btn-gameover {
-                right: 20%;
-                top: 70%;
+                right: 20px;
+                top: 20px;
             }
 
             #sound-btn-home, #mute-btn-home {
-                left: 15px;
-                /* bottom: 20px; */
-                top: 15px;
+                left: 20px;
+                bottom: 20px;
+                top: auto;
             }
 
             #pause-btn, #play-btn {
                 right: 20px;
-                top: 5px;
+                top: 20px;
             }
         }
 
@@ -289,6 +317,9 @@
             align-items: center;
             gap: 30px;
             pointer-events: auto;
+            /* iOS performance optimizations */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
         }
 
         .pause-overlay .game-control {
@@ -322,7 +353,7 @@
             }
 
             #start-btn {
-                top: 35%;
+                top: 75%;
             }
 
             #restart-btn {
@@ -411,7 +442,7 @@
         /* Desktop hover effects */
         @media (hover: hover) and (pointer: fine) {
             .game-control:hover {
-                transform: scale(1.05);
+                transform: scale(1.05) translateZ(0);
             }
         }
 
@@ -422,7 +453,7 @@
             }
 
             .game-control:active {
-                transform: scale(0.85);
+                transform: scale(0.85) translateZ(0);
             }
         }
 
@@ -432,7 +463,7 @@
                 position: absolute;
                 bottom: -80px;
                 left: 50%;
-                transform: translateX(-50%);
+                transform: translateX(-50%) translateZ(0);
                 color: #fff;
                 text-align: center;
                 font-size: 14px;
@@ -454,6 +485,25 @@
         @media (min-width: 769px) and (pointer: fine) {
             .desktop-info {
                 display: block;
+            }
+        }
+
+        /* iOS specific optimizations */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                -webkit-overflow-scrolling: touch;
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+            }
+            
+            .game-container {
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+            }
+            
+            #board, #ui {
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
             }
         }
     </style>
