@@ -29,6 +29,10 @@ const maxEnemySpeed = -8
 const MAX_DIFFICULTY_LEVEL = 5
 const PIPE_INTERVAL_REDUCTION_PER_LEVEL = 200
 
+// Device detection
+let isDesktop = false
+let isMobile = false
+
 // Touch handling variables
 let touchStartTime = 0
 let touchStartY = 0
@@ -113,41 +117,74 @@ const muteBtnHome = document.getElementById("mute-btn-home")
 const soundBtnGameover = document.getElementById("sound-btn-gameover")
 const muteBtnGameover = document.getElementById("mute-btn-gameover")
 
-// Mobile detection
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+// Device detection function
+function detectDevice() {
+  const userAgent = navigator.userAgent
+  const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0
+  const screenWidth = window.innerWidth
+  const screenHeight = window.innerHeight
+
+  // Check for desktop: large screen + fine pointer + no touch primary input
+  isDesktop =
+    screenWidth >= 769 && window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(hover: none)").matches
+
+  isMobile = !isDesktop
+
+  console.log(`Device detected: ${isDesktop ? "Desktop" : "Mobile"} (${screenWidth}x${screenHeight})`)
+}
 
 // Responsive canvas scaling
 function updateCanvasSize() {
+  detectDevice()
+
   const container = document.querySelector(".game-container")
+  const containerRect = container.getBoundingClientRect()
 
-  // Set canvas to full viewport dimensions
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  if (isMobile) {
+    // Mobile: Full viewport
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
 
-  // Update canvas dimensions to match viewport
-  board.width = viewportWidth
-  board.height = viewportHeight
-  ui.width = viewportWidth
-  ui.height = viewportHeight
+    board.width = viewportWidth
+    board.height = viewportHeight
+    ui.width = viewportWidth
+    ui.height = viewportHeight
 
-  // Update board dimensions for game logic scaling
-  const scaleX = viewportWidth / boardWidth
-  const scaleY = viewportHeight / boardHeight
+    const scaleX = viewportWidth / boardWidth
+    const scaleY = viewportHeight / boardHeight
 
-  // Store the scale factors globally for game element positioning
-  window.gameScaleX = scaleX
-  window.gameScaleY = scaleY
+    window.gameScaleX = scaleX
+    window.gameScaleY = scaleY
 
-  // Apply CSS to ensure full coverage
-  board.style.width = "100vw"
-  board.style.height = "100vh"
-  board.style.transform = "none"
-  board.style.transformOrigin = "top left"
+    board.style.width = "100vw"
+    board.style.height = "100vh"
+    board.style.transform = "none"
+    ui.style.width = "100vw"
+    ui.style.height = "100vh"
+    ui.style.transform = "none"
+  } else {
+    // Desktop: Fixed container size
+    const containerWidth = containerRect.width
+    const containerHeight = containerRect.height
 
-  ui.style.width = "100vw"
-  ui.style.height = "100vh"
-  ui.style.transform = "none"
-  ui.style.transformOrigin = "top left"
+    board.width = containerWidth
+    board.height = containerHeight
+    ui.width = containerWidth
+    ui.height = containerHeight
+
+    const scaleX = containerWidth / boardWidth
+    const scaleY = containerHeight / boardHeight
+
+    window.gameScaleX = scaleX
+    window.gameScaleY = scaleY
+
+    board.style.width = "100%"
+    board.style.height = "100%"
+    board.style.transform = "none"
+    ui.style.width = "100%"
+    ui.style.height = "100%"
+    ui.style.transform = "none"
+  }
 }
 
 window.onload = () => {
@@ -161,11 +198,17 @@ window.onload = () => {
   uiCanvas.width = boardWidth
   uiContext = uiCanvas.getContext("2d")
 
-  // Update canvas size for responsiveness
+  // Detect device and update canvas size
+  detectDevice()
   updateCanvasSize()
-  window.addEventListener("resize", updateCanvasSize)
-  window.addEventListener("orientationchange", () => {
+
+  // Add event listeners for responsive updates
+  window.addEventListener("resize", () => {
     setTimeout(updateCanvasSize, 100)
+  })
+
+  window.addEventListener("orientationchange", () => {
+    setTimeout(updateCanvasSize, 200)
   })
 
   // Load images
@@ -196,22 +239,24 @@ window.onload = () => {
   setupEventListeners()
   showHomepage()
 
-  // Prevent default touch behaviors
-  document.addEventListener(
-    "touchmove",
-    (e) => {
-      e.preventDefault()
-    },
-    { passive: false },
-  )
+  // Prevent default touch behaviors on mobile
+  if (isMobile) {
+    document.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault()
+      },
+      { passive: false },
+    )
 
-  document.addEventListener(
-    "touchstart",
-    (e) => {
-      e.preventDefault()
-    },
-    { passive: false },
-  )
+    document.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault()
+      },
+      { passive: false },
+    )
+  }
 }
 
 function setupEventListeners() {
@@ -228,26 +273,29 @@ function setupEventListeners() {
   setupButton(soundBtnPause, toggleSound)
   setupButton(muteBtnPause, toggleSound)
 
-  // Keyboard controls
+  // Keyboard controls (desktop)
   document.addEventListener("keydown", handleKeyPress)
 
-  // Enhanced touch controls for game area
-  board.addEventListener("touchstart", handleGameTouchStart, { passive: false })
-  board.addEventListener("touchend", handleGameTouchEnd, { passive: false })
-  board.addEventListener(
-    "touchmove",
-    (e) => {
-      e.preventDefault()
-    },
-    { passive: false },
-  )
+  if (isMobile) {
+    // Mobile touch controls
+    board.addEventListener("touchstart", handleGameTouchStart, { passive: false })
+    board.addEventListener("touchend", handleGameTouchEnd, { passive: false })
+    board.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault()
+      },
+      { passive: false },
+    )
 
-  // Add touch handler to the entire game container for gameplay
-  const gameContainer = document.querySelector(".game-container")
-  gameContainer.addEventListener("touchstart", handleContainerTouch, { passive: false })
-
-  // Global touch handler for game control (reduced functionality)
-  document.addEventListener("touchstart", handleGlobalTouch, { passive: false })
+    const gameContainer = document.querySelector(".game-container")
+    gameContainer.addEventListener("touchstart", handleContainerTouch, { passive: false })
+    document.addEventListener("touchstart", handleGlobalTouch, { passive: false })
+  } else {
+    // Desktop mouse controls
+    board.addEventListener("click", handleDesktopClick)
+    document.addEventListener("click", handleDesktopGlobalClick)
+  }
 }
 
 function setupButton(button, callback) {
@@ -262,10 +310,8 @@ function setupButton(button, callback) {
     e.preventDefault()
     e.stopPropagation()
 
-    // Add visual feedback
     button.classList.add("button-active")
 
-    // Execute callback after short delay for visual feedback
     setTimeout(() => {
       button.classList.remove("button-active")
       callback()
@@ -279,91 +325,88 @@ function setupButton(button, callback) {
     callback()
   })
 
-  button.addEventListener(
-    "touchstart",
-    (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      button.classList.add("button-active")
-    },
-    { passive: false },
-  )
+  if (isMobile) {
+    button.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        button.classList.add("button-active")
+      },
+      { passive: false },
+    )
 
-  button.addEventListener("touchend", handleButtonTouch, { passive: false })
+    button.addEventListener("touchend", handleButtonTouch, { passive: false })
 
-  button.addEventListener(
-    "touchcancel",
-    (e) => {
-      e.preventDefault()
-      button.classList.remove("button-active")
-    },
-    { passive: false },
-  )
+    button.addEventListener(
+      "touchcancel",
+      (e) => {
+        e.preventDefault()
+        button.classList.remove("button-active")
+      },
+      { passive: false },
+    )
+  }
 }
 
+// Mobile touch handlers
 function handleGameTouchStart(e) {
+  if (!isMobile) return
+
   e.preventDefault()
   e.stopPropagation()
 
-  // Only handle game touches during active gameplay
   if (!gameStarted || gameOver || isPaused || isCountdownActive) return
 
   isTouchActive = true
   touchStartTime = Date.now()
   touchStartY = e.touches[0].clientY
 
-  // Immediate fly action
   velocityY = -6
   if (soundEnabled) {
     flySound.currentTime = 0
-    flySound.play().catch(() => {}) // Handle audio play errors gracefully
+    flySound.play().catch(() => {})
   }
 }
 
 function handleGameTouchEnd(e) {
+  if (!isMobile) return
+
   e.preventDefault()
   e.stopPropagation()
   isTouchActive = false
 }
 
 function handleGlobalTouch(e) {
-  // Only handle touches that aren't on buttons
+  if (!isMobile) return
+
   if (e.target.closest(".game-control")) return
 
   e.preventDefault()
 
   if (isCountdownActive) return
 
-  // Start game if not started yet (only on homepage)
   if (!gameStarted && !gameOver) {
     startGame()
     return
   }
 
-  // If game is paused, resume
   if (isPaused) {
     resumeGame()
     return
   }
-
-  // DO NOT restart game on any touch when game is over
-  // Only restart button should work
 }
 
 function handleContainerTouch(e) {
-  // Don't handle if touching a button
+  if (!isMobile) return
+
   if (e.target.closest(".game-control")) return
-
-  // Don't handle if touching pause overlay
   if (e.target.closest(".pause-overlay")) return
-
-  // Don't handle if game is over
   if (gameOver) return
 
   e.preventDefault()
   e.stopPropagation()
 
-  // Only handle Superman jumping during active gameplay
   if (gameStarted && !gameOver && !isPaused && !isCountdownActive) {
     velocityY = -6
     if (soundEnabled) {
@@ -373,10 +416,44 @@ function handleContainerTouch(e) {
   }
 }
 
+// Desktop mouse handlers
+function handleDesktopClick(e) {
+  if (!isDesktop) return
+
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (gameStarted && !gameOver && !isPaused && !isCountdownActive) {
+    velocityY = -6
+    if (soundEnabled) {
+      flySound.currentTime = 0
+      flySound.play().catch(() => {})
+    }
+  }
+}
+
+function handleDesktopGlobalClick(e) {
+  if (!isDesktop) return
+
+  if (e.target.closest(".game-control")) return
+  if (e.target.closest(".pause-overlay")) return
+
+  if (isCountdownActive) return
+
+  if (!gameStarted && !gameOver) {
+    startGame()
+    return
+  }
+
+  if (isPaused) {
+    resumeGame()
+    return
+  }
+}
+
 function toggleSound() {
   soundEnabled = !soundEnabled
 
-  // Update only relevant controls based on current screen
   if (gameOver) {
     soundBtnGameover.style.display = soundEnabled ? "block" : "none"
     muteBtnGameover.style.display = soundEnabled ? "none" : "block"
