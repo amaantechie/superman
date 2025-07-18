@@ -17,11 +17,6 @@ body {
   width: 100%;
   height: 100%;
   font-family: Arial, sans-serif;
-  /* Safari-specific optimizations */
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-perspective: 1000px;
-  perspective: 1000px;
 }
 
 #board {
@@ -29,15 +24,7 @@ body {
   background-size: cover;
   background-position: center;
   touch-action: none;
-  /* Browser-specific image rendering */
   image-rendering: optimizeSpeed;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: optimize-contrast;
-  /* Safari-specific optimizations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 /* Game Over Screen Elements */
@@ -63,7 +50,7 @@ body {
   display: none;
 }
 
-/* Enhanced Button Styles with browser optimizations */
+/* Enhanced Button Styles */
 .game-control {
   pointer-events: auto;
   cursor: pointer;
@@ -80,26 +67,11 @@ body {
   font-size: 40px;
   color: #ffd700;
   font-weight: bold;
-  /* Browser-specific optimizations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-/* Safari-specific button optimizations */
-@supports (-webkit-touch-callout: none) {
-  .game-control {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-    -webkit-font-smoothing: antialiased;
-  }
 }
 
 .game-control:active,
 .game-control.button-active {
-  transform: scale(0.9) translateZ(0);
+  transform: scale(0.9);
   opacity: 0.7;
 }
 
@@ -108,10 +80,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  /* Browser-specific image rendering */
   image-rendering: optimizeSpeed;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: optimize-contrast;
 }
 
 /* Button feedback effect */
@@ -135,34 +104,19 @@ body {
 /* Performance optimizations */
 canvas {
   will-change: transform;
-  /* Browser-specific canvas optimizations */
   image-rendering: optimizeSpeed;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: optimize-contrast;
-  image-rendering: crisp-edges;
-  /* Safari-specific optimizations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-/* Safari-specific canvas optimizations */
-@supports (-webkit-touch-callout: none) {
-  canvas {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
 }
 
 /* Animations */
 @keyframes enemyFloat {
   0%,
   100% {
-    transform: translateY(0) translateZ(0);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px) translateZ(0);
+    transform: translateY(-10px);
   }
 }
 
@@ -172,15 +126,15 @@ canvas {
 
 @keyframes shield-pulse {
   0% {
-    transform: scale(1) translateZ(0);
+    transform: scale(1);
     opacity: 1;
   }
   50% {
-    transform: scale(1.2) translateZ(0);
+    transform: scale(1.2);
     opacity: 0.7;
   }
   100% {
-    transform: scale(1) translateZ(0);
+    transform: scale(1);
     opacity: 1;
   }
 }
@@ -193,19 +147,19 @@ canvas {
 /* Achievement notification animation */
 @keyframes achievementPop {
   0% {
-    transform: translateX(-50%) translateY(-20px) translateZ(0);
+    transform: translateX(-50%) translateY(-20px);
     opacity: 0;
   }
   10% {
-    transform: translateX(-50%) translateY(0) translateZ(0);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
   90% {
-    transform: translateX(-50%) translateY(0) translateZ(0);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) translateY(-20px) translateZ(0);
+    transform: translateX(-50%) translateY(-20px);
     opacity: 0;
   }
 }
@@ -229,11 +183,6 @@ canvas {
   align-items: center;
   gap: 30px;
   pointer-events: auto;
-  /* Browser optimizations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
 }
 
 .pause-overlay .game-control {
@@ -264,7 +213,7 @@ canvas {
 }
 
 .achievement-card:hover {
-  transform: translateY(-2px) translateZ(0);
+  transform: translateY(-2px);
 }
 
 .achievement-card.unlocked {
@@ -283,11 +232,11 @@ canvas {
 
 .close-achievements:hover {
   background: #fff;
-  transform: scale(1.05) translateZ(0);
+  transform: scale(1.05);
 }
 
 .close-achievements:active {
-  transform: scale(0.95) translateZ(0);
+  transform: scale(0.95);
 }
 
 /* Responsive adjustments */
@@ -327,22 +276,6 @@ html {
   -webkit-text-size-adjust: none;
   -webkit-user-select: none;
   user-select: none;
-  /* Safari-specific optimizations */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Safari-specific optimizations */
-@supports (-webkit-touch-callout: none) {
-  html {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-
-  body {
-    -webkit-overflow-scrolling: touch;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
 }
 
 /* High DPI display optimizations */
@@ -373,10 +306,6 @@ html {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  /* Browser optimizations */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  will-change: transform;
 }
 
 /* Button size classes for consistency */
@@ -402,77 +331,13 @@ html {
   margin: 10px;
 }
 
-/* Mobile touch improvements with browser-specific optimizations */
+/* Mobile touch improvements */
 @media (hover: none) and (pointer: coarse) {
   .game-control {
     transition: transform 0.05s ease;
   }
 
   .game-control:active {
-    transform: scale(0.85) translateZ(0);
-  }
-}
-
-/* Safari-specific mobile optimizations */
-@supports (-webkit-touch-callout: none) {
-  @media (hover: none) and (pointer: coarse) {
-    .game-control {
-      -webkit-transform: translate3d(0, 0, 0);
-      transform: translate3d(0, 0, 0);
-      transition: -webkit-transform 0.05s ease;
-      transition: transform 0.05s ease;
-    }
-
-    .game-control:active {
-      -webkit-transform: scale(0.85) translate3d(0, 0, 0);
-      transform: scale(0.85) translate3d(0, 0, 0);
-    }
-  }
-}
-
-/* Chrome-specific optimizations */
-@supports (image-rendering: pixelated) {
-  canvas {
-    image-rendering: pixelated;
-  }
-
-  .game-control img {
-    image-rendering: pixelated;
-  }
-}
-
-/* Performance optimizations for different browsers */
-@media (prefers-reduced-motion: no-preference) {
-  .game-control {
-    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .game-control {
-    transition: none;
-  }
-
-  .enemy {
-    animation: none;
-  }
-
-  .powerup-shield {
-    animation: none;
-  }
-}
-
-/* Browser-specific font rendering */
-@supports (-webkit-touch-callout: none) {
-  .game-control {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-/* Memory optimization for Safari */
-@supports (-webkit-touch-callout: none) {
-  .game-control::before {
-    will-change: background;
+    transform: scale(0.85);
   }
 }
